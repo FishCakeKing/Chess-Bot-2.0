@@ -13,9 +13,13 @@ public class PieceHandler : MonoBehaviour
     public GameObject rulesHandlerGameObject; // Poll this to make sure a move is legal, before allowing dropping the piece
     private RulesHandler rulesHandler;
 
+    public GameObject boardHandlerObject;
+    private BoardHandler boardHandler;
+
     // Piece properties
     public int x, y;
     public char pieceName; // Q = white queen, q = black queen etc
+
 
     public void Init()
     {
@@ -23,6 +27,7 @@ public class PieceHandler : MonoBehaviour
         x = (int)transform.position.x;
         y = (int)transform.position.y;
         rulesHandler = rulesHandlerGameObject.GetComponent<RulesHandler>();
+        boardHandler = boardHandlerObject.GetComponent<BoardHandler>();
     }
 
     
@@ -66,7 +71,8 @@ public class PieceHandler : MonoBehaviour
 
         if(rulesHandler.IsMoveLegal(x,y,newCoords.Item1,newCoords.Item2))
         {
-            snapToGrid();
+            boardHandler.MovePiece(x, y, newCoords.Item1, newCoords.Item2); // Tell the board handler that we moved
+            snapToGrid(); 
         }
 
         transform.position = new Vector2(x, y);
@@ -92,7 +98,7 @@ public class PieceHandler : MonoBehaviour
     
     private (int,int) GetCoordinates()
     {
-        return ((int)System.Math.Round(transform.position.x), (int)System.Math.Round(transform.position.x));
+        return ((int)System.Math.Round(transform.position.x), (int)System.Math.Round(transform.position.y));
     }
 
 }

@@ -180,6 +180,10 @@ MonoBehaviour:
   blackKingPrefab: {fileID: 5546761160685003312, guid: 2fce8a1f48779d24199e2bae2e8c0d30, type: 3}
   whiteKingPrefab: {fileID: 2208238243202805452, guid: a5ccb3bc8e3d8304fa4ca0ce40295f35, type: 3}
   rulesHandler: {fileID: 447794037}
+  castlingRights: 
+  enPassantSquare: 
+  halfmoveClock: 0
+  fullmoveNumber: 0
 --- !u!1 &91195421
 GameObject:
   m_ObjectHideFlags: 0
@@ -1193,6 +1197,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2739d22537cc85945987b53100722510, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  boardObject: {fileID: 75234087}
 --- !u!4 &447794039
 Transform:
   m_ObjectHideFlags: 0

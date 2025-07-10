@@ -29,6 +29,12 @@ public class BoardHandler : MonoBehaviour
 
     private Dictionary<char, GameObject> pieceNamePrefabConvertion;
 
+    public bool didEnPassant;
+
+    private string FEN;
+
+    private PieceHandler[,] board;
+
     private char activeColor;
     [SerializeField]
     private string castlingRights;
@@ -48,12 +54,15 @@ public class BoardHandler : MonoBehaviour
         blackCaptures = new List<char>();
         pieceNamePrefabConvertion = new Dictionary<char, GameObject>();
 
+        board = new PieceHandler[9, 9]; // Sorry, but when talking about rows 1-8, worrying about 0-indexing just causes confusion later down the line
+
         InitializePieceDict();
 
         PlaceFENNotation("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+        print(GetCoordsFromSquareNotation("a1"));
+        print(GetCoordsFromSquareNotation("h8"));
     }
 
-    // Update is called once per frame
     void Update()
     {
         
@@ -68,6 +77,7 @@ public class BoardHandler : MonoBehaviour
         PieceHandler p = b.GetComponent<PieceHandler>();
         p.pieceName = pieceName;
         p.rulesHandlerGameObject = rulesHandler;
+        p.boardHandlerObject = this.gameObject;
         p.Init();
 
         // In ASCII, the BIG LETTERS come before the small ones. The small ones start with 'a' = 97
@@ -82,6 +92,27 @@ public class BoardHandler : MonoBehaviour
         }
 
         return b;
+    }
+
+    public void MovePiece(int fromx, int fromy, int tox, int toy)
+    {
+        // Here we do not validate if this is a valid move! That is done when deciding to move the piece
+        PieceHandler tmp = board[fromx, fromy];
+        board[fromx, fromy] = null;
+
+        if (board[tox, toy] != null)
+        {
+            Capture(board[tox, toy].gameObject);
+        }
+        else if(didEnPassant)
+        {
+            // Did en passant
+            didEnPassant = false;
+            int dir = toy - fromy;
+            Debug.Assert(System.Math.Abs(dir) == 1);
+            Capture(board[tox, toy - dir].gameObject);
+        }
+        board[tox, toy] = tmp;
     }
 
     // https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
@@ -107,7 +138,8 @@ public class BoardHandler : MonoBehaviour
             }
             else
             {
-                PlacePiece(pieceNamePrefabConvertion[c], c, x, y);
+                GameObject p = PlacePiece(pieceNamePrefabConvertion[c], c, x, y);
+                board[x, y] = p.GetComponent<PieceHandler>();
                 x = x + 1;
             }
         }
@@ -118,6 +150,13 @@ public class BoardHandler : MonoBehaviour
         enPassantSquare = parts[3];
         halfmoveClock = short.Parse(parts[4]);
         fullmoveNumber = short.Parse(parts[5]);
+
+        FEN = notation;
+    }
+
+    public void SetEnPassant(string square)
+    {
+        enPassantSquare = square;
     }
 
     void Capture(GameObject capturee)
@@ -143,10 +182,14 @@ public class BoardHandler : MonoBehaviour
     {
         foreach (GameObject p in blackPieces)
         {
+            PieceHandler piece = p.GetComponent<PieceHandler>();
+            board[piece.x, piece.y] = null;
             Destroy(p);
         }
         foreach (GameObject p in whitePieces)
         {
+            PieceHandler piece = p.GetComponent<PieceHandler>();
+            board[piece.x, piece.y] = null;
             Destroy(p);
         }
     }
@@ -165,5 +208,24 @@ public class BoardHandler : MonoBehaviour
         pieceNamePrefabConvertion.Add('b', blackBishopPrefab);
         pieceNamePrefabConvertion.Add('R', whiteRookPrefab);
         pieceNamePrefabConvertion.Add('r', blackRookPrefab);
+    }
+
+    public PieceHandler[,] GetBoard()
+    {
+        return board;
+    }
+
+    // Convert something like 4,4 to d4
+    public string GetSquareNotation(int x, int y)
+    {
+        return (char)(x+96) + y.ToString(); // Even more ascii magic. 'a' = 97
+    }
+
+    public (int,int) GetCoordsFromSquareNotation(string not)
+    {
+        Debug.Assert(not.Length == 2);
+        int x = (int)(not[0] - 96);
+        int y = (int)(not[1] - 48);
+        return (x, y);
     }
 }
