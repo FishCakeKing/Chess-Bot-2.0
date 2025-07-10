@@ -29,6 +29,16 @@ public class BoardHandler : MonoBehaviour
 
     private Dictionary<char, GameObject> pieceNamePrefabConvertion;
 
+    private char activeColor;
+    [SerializeField]
+    private string castlingRights;
+    [SerializeField]
+    private string enPassantSquare;
+    [SerializeField]
+    private short halfmoveClock;
+    [SerializeField]
+    private short fullmoveNumber;
+
 
     void Start()
     {
@@ -77,11 +87,14 @@ public class BoardHandler : MonoBehaviour
     // https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
     public void PlaceFENNotation(string notation)
     {
+        string[] parts = notation.Split(' ');
+
+        Debug.Assert(parts.Length == 6); // Pieces, active color, castling, en passant, clock, count
+
         int x = 1;
         int y = 8;
-        foreach(char c in notation)
+        foreach(char c in parts[0])
         {
-            if (c == ' ') break;
             if(c == '/')
             {
                 // New row
@@ -98,6 +111,13 @@ public class BoardHandler : MonoBehaviour
                 x = x + 1;
             }
         }
+        Debug.Assert(parts[1].Length == 1); // If this is not 1 the FEN notation is incorrect
+        activeColor = (char)parts[1][0];
+
+        castlingRights = parts[2];
+        enPassantSquare = parts[3];
+        halfmoveClock = short.Parse(parts[4]);
+        fullmoveNumber = short.Parse(parts[5]);
     }
 
     void Capture(GameObject capturee)
