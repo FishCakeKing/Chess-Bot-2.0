@@ -14,7 +14,7 @@ public class PieceHandler : MonoBehaviour
     public int x, y;
     public char pieceName; // Q = white queen, q = black queen etc
 
-    void Start()
+    public void Init()
     {
         isDragging = false;
         x = (int)transform.position.x;
