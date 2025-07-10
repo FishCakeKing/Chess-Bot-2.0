@@ -66,8 +66,7 @@ public class BoardHandler : MonoBehaviour
         InitializePieceDict();
 
         PlaceFENNotation("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-        print(GetCoordsFromSquareNotation("a1"));
-        print(GetCoordsFromSquareNotation("h8"));
+
     }
 
     void Update()
@@ -228,14 +227,6 @@ public class BoardHandler : MonoBehaviour
     public string GetSquareNotation(int x, int y)
     {
         return (char)(x+96) + y.ToString(); // Even more ascii magic. 'a' = 97
-    }
-
-    public (int,int) GetCoordsFromSquareNotation(string not)
-    {
-        Debug.Assert(not.Length == 2);
-        int x = (int)(not[0] - 96);
-        int y = (int)(not[1] - 48);
-        return (x, y);
     }
 
     public void HighLightSquares(List<(int,int)> squares)
