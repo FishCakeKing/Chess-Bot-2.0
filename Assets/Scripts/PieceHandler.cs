@@ -62,7 +62,7 @@ public class PieceHandler : MonoBehaviour
     }
 
     private void OnMouseUp()
-    {
+    {        
         isDragging = false;
         var newCoords = GetCoordinates();
 
@@ -85,6 +85,9 @@ public class PieceHandler : MonoBehaviour
         {
             isDragging = true;
             offset = transform.position - GetMouseWorldPosition();
+            boardHandler.RemoveHighlights();
+            boardHandler.activePieceReachableSquares = rulesHandler.GetLegalMoves(x,y);
+            boardHandler.HighLightSquares(boardHandler.activePieceReachableSquares);
         }
     }
 

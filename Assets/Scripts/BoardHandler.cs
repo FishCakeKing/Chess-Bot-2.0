@@ -21,13 +21,18 @@ public class BoardHandler : MonoBehaviour
     public GameObject whiteKingPrefab;
     public GameObject rulesHandler;
 
+    public GameObject highLightPrefab;
+
     private List<GameObject> blackPieces;
     private List<GameObject> whitePieces;
+    private List<GameObject> highLights;
 
     private List<char> whiteCaptures; // The black pieces that white has captured. 
     private List<char> blackCaptures; // No need to keep pieces here, this is just to calculate values
 
     private Dictionary<char, GameObject> pieceNamePrefabConvertion;
+
+    public List<(int, int)> activePieceReachableSquares;
 
     public bool didEnPassant;
 
@@ -50,9 +55,11 @@ public class BoardHandler : MonoBehaviour
     {
         blackPieces = new List<GameObject>();
         whitePieces = new List<GameObject>();
+        highLights = new List<GameObject>();
         whiteCaptures = new List<char>();
         blackCaptures = new List<char>();
         pieceNamePrefabConvertion = new Dictionary<char, GameObject>();
+        activePieceReachableSquares = new List<(int, int)>();
 
         board = new PieceHandler[9, 9]; // Sorry, but when talking about rows 1-8, worrying about 0-indexing just causes confusion later down the line
 
@@ -113,6 +120,8 @@ public class BoardHandler : MonoBehaviour
             Capture(board[tox, toy - dir].gameObject);
         }
         board[tox, toy] = tmp;
+
+        RemoveHighlights();
     }
 
     // https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
@@ -227,5 +236,28 @@ public class BoardHandler : MonoBehaviour
         int x = (int)(not[0] - 96);
         int y = (int)(not[1] - 48);
         return (x, y);
+    }
+
+    public void HighLightSquares(List<(int,int)> squares)
+    {
+        foreach((int,int) square in squares)
+        {
+            HighlightSquare(square.Item1, square.Item2);
+        }
+    }
+
+    void HighlightSquare(int x, int y)
+    {
+        GameObject g = Instantiate(highLightPrefab, new Vector2(x + 0.0f, y + 0.0f), Quaternion.identity, this.transform);
+        highLights.Add(g);
+    }
+
+    public void RemoveHighlights()
+    {
+        foreach(var a in highLights)
+        {
+            Destroy(a.gameObject);
+        }
+        activePieceReachableSquares = new List<(int, int)>();
     }
 }

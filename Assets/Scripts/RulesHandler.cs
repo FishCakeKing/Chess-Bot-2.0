@@ -27,18 +27,19 @@ public class RulesHandler : MonoBehaviour
     {
         // Call the corresponding movement function
         char piece = board[fromx, fromy].pieceName;
+        var legalMoves = GetLegalMoves(fromx, fromy);
         switch (piece)
         {
             // Pawn moves
             case 'p':
-            case 'P':                
-                if(LegalMovesPawn(fromx, fromy).Contains((tox, toy)))
+            case 'P':
+                if (legalMoves.Contains((tox, toy)))
                 {
-                    if (enPassantSquare != "-" && boardHandler.GetCoordsFromSquareNotation(enPassantSquare) == (tox, toy))
+                    // The desired move is legal. 
+                    if (enPassantSquare != "-" && GetCoordsFromSquareNotation(enPassantSquare) == (tox, toy))
                     {
                         boardHandler.didEnPassant = true;
                     }
-                    // The desired move is legal. 
                     if (System.Math.Abs(fromy-toy) == 2) 
                     {
                         // Moved two spaces. Can en passant
@@ -55,6 +56,20 @@ public class RulesHandler : MonoBehaviour
             default:
                 Debug.Log("Invalid piece moved! " + piece + " at " + fromx + "," + fromy);
                 return false;
+        }
+    }
+
+    public List<(int, int)> GetLegalMoves(int fromx, int fromy)
+    {
+        char piece = board[fromx, fromy].pieceName;
+        switch (piece)
+        {
+            // Pawn moves
+            case 'p':
+            case 'P':
+                return LegalMovesPawn(fromx, fromy);
+            default:
+                return new List<(int, int)>();
         }
     }
 
@@ -129,14 +144,14 @@ public class RulesHandler : MonoBehaviour
         // En passant left. During en passant, the pawns are on the same y-level
         if (fromx > 1 && SquareHasAnEnemy(board[fromx, fromy], fromx - 1, fromy))
         {
-            if(enPassantSquare != "-")
+            if(enPassantSquare != "-" && GetCoordsFromSquareNotation(enPassantSquare).Item1-fromx == -1)
                 validSquares.Add((fromx - 1, fromy + dir));
         }
 
         // En passant right
         if (fromx < 8 && SquareHasAnEnemy(board[fromx, fromy], fromx + 1, fromy))
         {
-            if (enPassantSquare != "-")
+            if (enPassantSquare != "-" && GetCoordsFromSquareNotation(enPassantSquare).Item1 - fromx == 1)
                 validSquares.Add((fromx + 1, fromy + dir));
         }
 
@@ -158,5 +173,13 @@ public class RulesHandler : MonoBehaviour
     {
         enPassantSquare = "-";
         boardHandler.SetEnPassant(enPassantSquare);
+    }
+
+    public (int, int) GetCoordsFromSquareNotation(string not)
+    {
+        Debug.Assert(not.Length == 2);
+        int x = (int)(not[0] - 96);
+        int y = (int)(not[1] - 48);
+        return (x, y);
     }
 }

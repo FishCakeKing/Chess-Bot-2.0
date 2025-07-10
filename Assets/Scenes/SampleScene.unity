@@ -180,6 +180,8 @@ MonoBehaviour:
   blackKingPrefab: {fileID: 5546761160685003312, guid: 2fce8a1f48779d24199e2bae2e8c0d30, type: 3}
   whiteKingPrefab: {fileID: 2208238243202805452, guid: a5ccb3bc8e3d8304fa4ca0ce40295f35, type: 3}
   rulesHandler: {fileID: 447794037}
+  highLightPrefab: {fileID: 1857992275551871397, guid: 329e93ec72e020b4bbfb36773eaa9f3b, type: 3}
+  didEnPassant: 0
   castlingRights: 
   enPassantSquare: 
   halfmoveClock: 0
