@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// This script manages everything the piece does and is.
+// It stores coordinates and piece type, and has functions to move the piece around
 public class PieceHandler : MonoBehaviour
 {
     // GUI variables
@@ -10,6 +12,7 @@ public class PieceHandler : MonoBehaviour
 
     public GameObject rulesHandlerGameObject; // Poll this to make sure a move is legal, before allowing dropping the piece
     private RulesHandler rulesHandler;
+
     // Piece properties
     public int x, y;
     public char pieceName; // Q = white queen, q = black queen etc
