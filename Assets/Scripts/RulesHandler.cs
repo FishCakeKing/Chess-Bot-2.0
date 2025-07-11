@@ -124,7 +124,7 @@ public class RulesHandler : MonoBehaviour
         {
             if(IsSquareEmpty(fromx, fromy + dir))
             {
-                validSquares.Add((fromx, fromy + dir));
+                AddMoveToList(fromx, fromy, fromx, fromy + dir, ref validSquares);
             }
         }
 
@@ -133,40 +133,49 @@ public class RulesHandler : MonoBehaviour
         {
             if(IsSquareEmpty(fromx,fromy+dir*2))
             {
-                validSquares.Add((fromx, fromy + dir*2));
+                AddMoveToList(fromx, fromy, fromx, fromy + dir * 2, ref validSquares);
                 enPassantDir = dir;
             }
         }
 
         // 3. Capture
         // Capture left
-        if(fromx > 1 && SquareHasAnEnemy(board[fromx,fromy],fromx-1,fromy+dir))
+        if(IsSquareValid(fromx - 1, fromy + dir) && fromx > 1 && SquareHasAnEnemy(board[fromx,fromy],fromx-1,fromy+dir))
         {
-            validSquares.Add((fromx - 1, fromy + dir));
+            AddMoveToList(fromx, fromy, fromx - 1, fromy + dir, ref validSquares);
         }
 
         // Capture right
-        if (fromx < 8 && SquareHasAnEnemy(board[fromx, fromy], fromx + 1, fromy + dir))
+        if (IsSquareValid(fromx + 1, fromy + dir) && fromx < 8 && SquareHasAnEnemy(board[fromx, fromy], fromx + 1, fromy + dir) && IsSquareValid(fromx+1,fromy+dir))
         {
-            validSquares.Add((fromx + 1, fromy + dir));
+            AddMoveToList(fromx, fromy, fromx + 1, fromy + dir, ref validSquares);
         }
 
         // 4. En passant
-        // En passant left. During en passant, the pawns are on the same y-level
+        // En passant left. During en passant, the pawns are on the same y-level. Since it is left, the square x - ours should be = -1
         if (fromx > 1 && SquareHasAnEnemy(board[fromx, fromy], fromx - 1, fromy))
         {
             if(enPassantSquare != "-" && GetCoordsFromSquareNotation(enPassantSquare).Item1-fromx == -1)
-                validSquares.Add((fromx - 1, fromy + dir));
+                AddMoveToList(fromx, fromy, fromx - 1, fromy + dir, ref validSquares);
         }
 
         // En passant right
         if (fromx < 8 && SquareHasAnEnemy(board[fromx, fromy], fromx + 1, fromy))
         {
             if (enPassantSquare != "-" && GetCoordsFromSquareNotation(enPassantSquare).Item1 - fromx == 1)
-                validSquares.Add((fromx + 1, fromy + dir));
+                AddMoveToList(fromx, fromy, fromx + 1, fromy + dir, ref validSquares);
         }
 
         return validSquares;
+    }
+
+    // This just removes the "not in check" criteria from the main code, for a bit of debloating
+    private void AddMoveToList(int fromx,int fromy, int tox, int toy, ref List<(int,int)> validSquares)
+    {
+         if(!MovePutsSelfInCheck(fromx, fromy, tox,toy))
+        {
+            validSquares.Add((tox, toy));
+        }
     }
 
     private List<(int,int)> LegalMovesRook(int fromx, int fromy)
@@ -181,22 +190,22 @@ public class RulesHandler : MonoBehaviour
         // 1. Go right
         for(int i = fromx+1; i<=8;i++)
         {
-            if (!GetAnotherRookStep(fromx, fromy, i, fromy, ref validMoves)) break;           
+            if (!AddMoveRook(fromx, fromy, i, fromy, ref validMoves)) break;           
         }
         // 2. Go left
         for (int i = fromx -1; i >= 1; i--)
         {
-            if (!GetAnotherRookStep(fromx, fromy, i, fromy, ref validMoves)) break;
+            if (!AddMoveRook(fromx, fromy, i, fromy, ref validMoves)) break;
         }
         // 3. Go up
         for (int i = fromy +1; i <= 8; i++)
         {
-            if (!GetAnotherRookStep(fromx, fromy, fromx, i, ref validMoves)) break;
+            if (!AddMoveRook(fromx, fromy, fromx, i, ref validMoves)) break;
         }
         // 4. Go down
         for (int i = fromy - 1; i >= 1; i--)
         {
-            if (!GetAnotherRookStep(fromx, fromy, fromx, i, ref validMoves)) break;
+            if (!AddMoveRook(fromx, fromy, fromx, i, ref validMoves)) break;
         }
 
         return validMoves;
@@ -219,25 +228,25 @@ public class RulesHandler : MonoBehaviour
         return validMoves;
     }
 
-    // Add a move to the knight, if the given move is valid
+    // Adds a move to the knight, if the given move is valid
     private void AddMoveHorse(int xOffset, int yOffset,PieceHandler attacker, ref List<(int,int)> validMoves)
     {
-        if (AttackableSquare(attacker, attacker.x + xOffset, attacker.y + yOffset))
+        if (AttackableSquare(attacker, attacker.x + xOffset, attacker.y + yOffset) && ! MovePutsSelfInCheck(attacker.x,attacker.y,attacker.x+xOffset,attacker.y+yOffset))
         {
             validMoves.Add((attacker.x + xOffset, attacker.y + yOffset));
         }
     }
 
-    // Add moves in one direction, returns false once an obstacle is encountered
-    private bool GetAnotherRookStep(int fromx, int fromy, int xIter, int yIter ,ref List<(int,int)> validMoves)
+    // Adds a move to the rook in one direction, returns false once an obstacle is encountered
+    private bool AddMoveRook(int fromx, int fromy, int xIter, int yIter ,ref List<(int,int)> validMoves)
     {
-        if (SquareHasAnEnemy(board[fromx, fromy], xIter, yIter))
+        if (SquareHasAnEnemy(board[fromx, fromy], xIter, yIter) && ! MovePutsSelfInCheck(fromx,fromy,xIter,yIter))
         {
             // There is an enemy. We can capture it, but can go no further
             validMoves.Add((xIter, yIter));
             return false;
         }
-        else if (board[xIter, yIter] == null)
+        else if (board[xIter, yIter] == null && !MovePutsSelfInCheck(fromx, fromy, xIter, yIter))
         {
             // Nothing there
             validMoves.Add((xIter, yIter));
@@ -254,7 +263,8 @@ public class RulesHandler : MonoBehaviour
     {
         // The square must be within bounds. 
         // It can be empty, or it can have an enemy
-        return IsSquareValid(x,y) && (IsSquareEmpty(x, y) || SquareHasAnEnemy(attacker, x, y));
+        // And it must not put you into check
+        return (IsSquareValid(x,y) && (IsSquareEmpty(x, y) || SquareHasAnEnemy(attacker, x, y))) && !MovePutsSelfInCheck(attacker.x, attacker.y, x, y);
     }
 
     private bool IsSquareValid(int x, int y)
