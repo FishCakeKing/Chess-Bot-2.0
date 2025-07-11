@@ -79,6 +79,14 @@ public class RulesHandler : MonoBehaviour
             case 'N':
             case 'n':
                 return LegalMovesKnight(fromx, fromy);
+            // Bishop moves
+            case 'B':
+            case 'b':
+                return LegalMovesBishop(fromx, fromy);
+            // Queen moves
+            case 'Q':
+            case 'q':
+                return LegalMovesQueen(fromx, fromy);
             default:
                 return new List<(int, int)>();
         }
@@ -172,6 +180,7 @@ public class RulesHandler : MonoBehaviour
     // This just removes the "not in check" criteria from the main code, for a bit of debloating
     private void AddMoveToList(int fromx,int fromy, int tox, int toy, ref List<(int,int)> validSquares)
     {
+        Debug.Assert(IsSquareValid(tox, toy));
          if(!MovePutsSelfInCheck(fromx, fromy, tox,toy))
         {
             validSquares.Add((tox, toy));
@@ -190,24 +199,90 @@ public class RulesHandler : MonoBehaviour
         // 1. Go right
         for(int i = fromx+1; i<=8;i++)
         {
-            if (!AddMoveRook(fromx, fromy, i, fromy, ref validMoves)) break;           
+            if (!AddMoveInDirection(fromx, fromy, i, fromy, ref validMoves)) break;           
         }
         // 2. Go left
         for (int i = fromx -1; i >= 1; i--)
         {
-            if (!AddMoveRook(fromx, fromy, i, fromy, ref validMoves)) break;
+            if (!AddMoveInDirection(fromx, fromy, i, fromy, ref validMoves)) break;
         }
         // 3. Go up
         for (int i = fromy +1; i <= 8; i++)
         {
-            if (!AddMoveRook(fromx, fromy, fromx, i, ref validMoves)) break;
+            if (!AddMoveInDirection(fromx, fromy, fromx, i, ref validMoves)) break;
         }
         // 4. Go down
         for (int i = fromy - 1; i >= 1; i--)
         {
-            if (!AddMoveRook(fromx, fromy, fromx, i, ref validMoves)) break;
+            if (!AddMoveInDirection(fromx, fromy, fromx, i, ref validMoves)) break;
         }
 
+        return validMoves;
+    }
+
+    private List<(int,int)> LegalMovesBishop(int fromx, int fromy)
+    {
+        List<(int, int)> validMoves = new List<(int, int)>();
+        PieceHandler attacker = board[fromx, fromy];
+
+        // A bishop can 
+        // 1. Move up to seven steps up + right
+        // 2. Up + left
+        // 3. Down + right
+        // 4. Down + left
+
+        // 1. Up and right
+        int j = 1;
+        for(int i = fromx+1;i<=8;i++)
+        {
+            if (fromy + j > 8) break;
+            // We can re-use the rook code! They are functionally the same, yay!
+            // Why is this? Well, it moves in a certain direction until it a: hits a wall, b: hits an enemy, or c: hits a friendly piece
+            if (!AddMoveInDirection(fromx, fromy, i, fromy + j, ref validMoves)) break;
+            j++;
+        }
+
+        // 2. Up and left
+        j = 1;
+        for (int i = fromx - 1; i >= 1; i--)
+        {
+            if (fromy + j > 8) break;
+            if (!AddMoveInDirection(fromx, fromy, i, fromy + j, ref validMoves)) break;
+            j++;
+        }
+
+        // 3. Down and right
+        j = -1;
+        for (int i = fromx + 1; i <= 8; i++)
+        {
+            if (fromy + j < 1) break;
+            if (!AddMoveInDirection(fromx, fromy, i, fromy + j, ref validMoves)) break;
+            j--;
+        }
+
+        // 4. Down and left
+        j = -1;
+        for (int i = fromx - 1; i >= 1; i--)
+        {
+            if (fromy + j < 1) break;
+            if (!AddMoveInDirection(fromx, fromy, i, fromy + j, ref validMoves)) break;
+            j--;
+        }
+        return validMoves;
+    }
+
+    private List<(int,int)> LegalMovesQueen(int fromx, int fromy)
+    {
+        // The queen is so simple. Just move like a rook and like a bishop :)
+        List<(int, int)> validMoves = new List<(int, int)>();
+        foreach((int,int) move in LegalMovesBishop(fromx,fromy))
+        {
+            validMoves.Add(move);
+        }
+        foreach ((int, int) move in LegalMovesRook(fromx, fromy))
+        {
+            validMoves.Add(move);
+        }
         return validMoves;
     }
 
@@ -238,7 +313,7 @@ public class RulesHandler : MonoBehaviour
     }
 
     // Adds a move to the rook in one direction, returns false once an obstacle is encountered
-    private bool AddMoveRook(int fromx, int fromy, int xIter, int yIter ,ref List<(int,int)> validMoves)
+    private bool AddMoveInDirection(int fromx, int fromy, int xIter, int yIter ,ref List<(int,int)> validMoves)
     {
         if (SquareHasAnEnemy(board[fromx, fromy], xIter, yIter) && ! MovePutsSelfInCheck(fromx,fromy,xIter,yIter))
         {
