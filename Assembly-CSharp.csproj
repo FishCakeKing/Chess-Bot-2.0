@@ -53,9 +53,9 @@
     <UnityVersion>2020.3.26f1</UnityVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\PieceHandler.cs" />
-    <Compile Include="Assets\Scripts\RulesHandler.cs" />
     <Compile Include="Assets\Scripts\BoardHandler.cs" />
+    <Compile Include="Assets\Scripts\RulesHandler.cs" />
+    <Compile Include="Assets\Scripts\PieceHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

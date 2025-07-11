@@ -23,8 +23,8 @@ public class BoardHandler : MonoBehaviour
 
     public GameObject highLightPrefab;
 
-    private List<GameObject> blackPieces;
-    private List<GameObject> whitePieces;
+    public List<GameObject> blackPieces;
+    public List<GameObject> whitePieces;
     private List<GameObject> highLights;
 
     private List<char> whiteCaptures; // The black pieces that white has captured. 
@@ -51,7 +51,7 @@ public class BoardHandler : MonoBehaviour
     private short fullmoveNumber;
 
 
-    void Start()
+    void Awake()
     {
         blackPieces = new List<GameObject>();
         whitePieces = new List<GameObject>();
@@ -71,7 +71,7 @@ public class BoardHandler : MonoBehaviour
 
     void Update()
     {
-        
+
     }
 
     GameObject PlacePiece(GameObject piecePrefab,char pieceName, int x, int y)

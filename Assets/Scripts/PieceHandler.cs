@@ -74,6 +74,10 @@ public class PieceHandler : MonoBehaviour
             boardHandler.MovePiece(x, y, newCoords.Item1, newCoords.Item2); // Tell the board handler that we moved
             snapToGrid(); 
         }
+        else
+        {
+            print("Nah that is illegal");
+        }
 
         transform.position = new Vector2(x, y);
 
@@ -86,7 +90,7 @@ public class PieceHandler : MonoBehaviour
             isDragging = true;
             offset = transform.position - GetMouseWorldPosition();
             boardHandler.RemoveHighlights();
-            boardHandler.activePieceReachableSquares = rulesHandler.GetLegalMoves(x,y);
+            boardHandler.activePieceReachableSquares = rulesHandler.GetMovesOrAttacks(x,y,false);
             boardHandler.HighLightSquares(boardHandler.activePieceReachableSquares);
         }
     }

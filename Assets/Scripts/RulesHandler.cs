@@ -2,32 +2,40 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// This script handles rules. 
+// It needs to be fed the state of the board
+// Given this, it can return the valid moves for any piece on the board
 public class RulesHandler : MonoBehaviour
 {
     public GameObject boardObject;
+    public GameObject dummyPrefab;
     BoardHandler boardHandler;
     PieceHandler[,] board;
     private string enPassantSquare;
     private int enPassantDir;
 
+    private PieceHandler whiteKing;
+    private PieceHandler blackKing;
+
+    private List<PieceHandler> whitePieces;
+    private List<PieceHandler> blackPieces;
+
+
     void Start()
     {
         boardHandler = boardObject.GetComponent<BoardHandler>();
+        whitePieces = new List<PieceHandler>();
+        blackPieces = new List<PieceHandler>();
         board = boardHandler.GetBoard();
         enPassantSquare = "-";
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 
     public bool IsMoveLegal(int fromx, int fromy, int tox, int toy)
     {
         // Call the corresponding movement function
         char piece = board[fromx, fromy].pieceName;
-        var legalMoves = GetLegalMoves(fromx, fromy);
+        var legalMoves = GetMovesOrAttacks(fromx, fromy,false);
 
         if(piece == 'p' || piece == 'P')
         {
@@ -62,7 +70,7 @@ public class RulesHandler : MonoBehaviour
        
     }
 
-    public List<(int, int)> GetLegalMoves(int fromx, int fromy)
+    public List<(int, int)> GetMovesOrAttacks(int fromx, int fromy,bool onlyReturnAttacks)
     {
         char piece = board[fromx, fromy].pieceName;
         switch (piece)
@@ -70,24 +78,29 @@ public class RulesHandler : MonoBehaviour
             // Pawn moves
             case 'p':
             case 'P':
-                return LegalMovesPawn(fromx, fromy);
+                return LegalMovesPawn(fromx, fromy,onlyReturnAttacks);
             // Rook moves
             case 'R':
             case 'r':
-                return LegalMovesRook(fromx, fromy);
+                return LegalMovesRook(fromx, fromy,onlyReturnAttacks);
             // Knight moves
             case 'N':
             case 'n':
-                return LegalMovesKnight(fromx, fromy);
+                return LegalMovesKnight(fromx, fromy,onlyReturnAttacks);
             // Bishop moves
             case 'B':
             case 'b':
-                return LegalMovesBishop(fromx, fromy);
+                return LegalMovesBishop(fromx, fromy,onlyReturnAttacks);
             // Queen moves
             case 'Q':
             case 'q':
-                return LegalMovesQueen(fromx, fromy);
+                return LegalMovesQueen(fromx, fromy,onlyReturnAttacks);
+            // King 
+            case 'K':
+            case 'k':
+                return LegalMovesKing(fromx, fromy,onlyReturnAttacks);
             default:
+                Debug.LogError("Invalid piece moved! " + piece);
                 return new List<(int, int)>();
         }
     }
@@ -105,13 +118,64 @@ public class RulesHandler : MonoBehaviour
         return (IsWhite(attacker) != IsWhite(board[x, y]));
     }
 
+    // Verifies if the desired move puts self into check. If so, it returns true, so that the move can be discarded as possible
     private bool MovePutsSelfInCheck(int fromx, int fromy, int tox, int toy)
     {
-        return false;
+        bool res = false;
+        // Since PieceHandler is Monobehaviour we can not just create a 'PieceHandler tmp', we unfortunately need to instantiate a whole new prefab, and then use that PieceHandler
+        GameObject backupOfAttackerObj = Instantiate(dummyPrefab);
+        GameObject backupOfDefenderObj = Instantiate(dummyPrefab);
+
+        PieceHandler backupOfAttacker = backupOfAttackerObj.GetComponent<PieceHandler>();
+        PieceHandler backupOfDefender = backupOfDefenderObj.GetComponent<PieceHandler>();
+
+        backupOfAttacker = board[fromx, fromy];
+        backupOfDefender = board[tox, toy]; // This may very well be null
+
+        bool isWhite = IsWhite(board[fromx, fromy]);
+
+        // Now, make the move, see what happens, and undo it again
+        Debug.Assert(backupOfAttacker != null);
+        board[fromx, fromy] = null;
+        board[tox, toy] = backupOfAttacker;
+
+        // Check for check
+        (List<(int, int)>,(int,int)) enemyAttacked = EnemyAttackedSquares(isWhite);
+        (int, int) kingCoords = enemyAttacked.Item2;
+
+        if(backupOfAttacker.pieceName == 'k' || backupOfAttacker.pieceName=='K')
+        {
+            // Okay, we might be in check right now, but who cares?
+            // Instead, check if the square we want to (escape) to is safe
+            kingCoords.Item1 = tox;
+            kingCoords.Item2 = toy;
+        }
+
+        foreach((int,int) square in enemyAttacked.Item1)
+        {
+            if(square == kingCoords)
+            {
+                res = true; // Yep, that move would put us into check
+                break;
+            }
+        }
+
+        // Restore the board
+        board[fromx, fromy] = backupOfAttacker;
+        board[tox, toy] = backupOfDefender;
+
+        // Clean up garbage
+        Destroy(backupOfAttackerObj);
+        Destroy(backupOfDefenderObj);
+
+        
+        return res;
     }
 
+
     // Below are all the functions that return all legal moves for any given piece on the board
-    private List<(int,int)> LegalMovesPawn(int fromx, int fromy)
+    // Set the flag 'onlyReturnAttacked' to instead return all squares that piece is currently attacking. 
+    private List<(int,int)> LegalMovesPawn(int fromx, int fromy,bool onlyReturnAttacked)
     {
         List<(int, int)> validSquares = new List<(int, int)>();
         bool isWhite = IsWhite(board[fromx, fromy]);
@@ -130,7 +194,7 @@ public class RulesHandler : MonoBehaviour
         // This does NOT include promotion, that is handled further down
         if (fromy + dir <= 8 && fromy + dir >= 1)
         {
-            if(IsSquareEmpty(fromx, fromy + dir))
+            if(IsSquareEmpty(fromx, fromy + dir) && !onlyReturnAttacked)
             {
                 AddMoveToList(fromx, fromy, fromx, fromy + dir, ref validSquares);
             }
@@ -139,7 +203,7 @@ public class RulesHandler : MonoBehaviour
         // 2.Move 2 steps forward, if it is on the base row
         if (isWhite && fromy == 2 || !isWhite && fromy == 7)
         {
-            if(IsSquareEmpty(fromx,fromy+dir*2))
+            if(IsSquareEmpty(fromx,fromy+dir*2) && !onlyReturnAttacked)
             {
                 AddMoveToList(fromx, fromy, fromx, fromy + dir * 2, ref validSquares);
                 enPassantDir = dir;
@@ -150,7 +214,8 @@ public class RulesHandler : MonoBehaviour
         // Capture left
         if(IsSquareValid(fromx - 1, fromy + dir) && fromx > 1 && SquareHasAnEnemy(board[fromx,fromy],fromx-1,fromy+dir))
         {
-            AddMoveToList(fromx, fromy, fromx - 1, fromy + dir, ref validSquares);
+            if (!onlyReturnAttacked) AddMoveToList(fromx, fromy, fromx - 1, fromy + dir, ref validSquares);
+            else validSquares.Add((fromx - 1, fromy + dir));
         }
 
         // Capture right
@@ -164,14 +229,20 @@ public class RulesHandler : MonoBehaviour
         if (fromx > 1 && SquareHasAnEnemy(board[fromx, fromy], fromx - 1, fromy))
         {
             if(enPassantSquare != "-" && GetCoordsFromSquareNotation(enPassantSquare).Item1-fromx == -1)
-                AddMoveToList(fromx, fromy, fromx - 1, fromy + dir, ref validSquares);
+            {
+                if (!onlyReturnAttacked) AddMoveToList(fromx, fromy, fromx - 1, fromy + dir, ref validSquares);
+                else validSquares.Add((fromx - 1, fromy + dir));
+            }
         }
 
         // En passant right
         if (fromx < 8 && SquareHasAnEnemy(board[fromx, fromy], fromx + 1, fromy))
         {
             if (enPassantSquare != "-" && GetCoordsFromSquareNotation(enPassantSquare).Item1 - fromx == 1)
-                AddMoveToList(fromx, fromy, fromx + 1, fromy + dir, ref validSquares);
+            {
+                if (!onlyReturnAttacked) AddMoveToList(fromx, fromy, fromx + 1, fromy + dir, ref validSquares);
+                else validSquares.Add((fromx + 1, fromy + dir));
+            }
         }
 
         return validSquares;
@@ -181,13 +252,13 @@ public class RulesHandler : MonoBehaviour
     private void AddMoveToList(int fromx,int fromy, int tox, int toy, ref List<(int,int)> validSquares)
     {
         Debug.Assert(IsSquareValid(tox, toy));
-         if(!MovePutsSelfInCheck(fromx, fromy, tox,toy))
+        if(!MovePutsSelfInCheck(fromx, fromy, tox,toy))
         {
             validSquares.Add((tox, toy));
         }
     }
 
-    private List<(int,int)> LegalMovesRook(int fromx, int fromy)
+    private List<(int,int)> LegalMovesRook(int fromx, int fromy, bool onlyReturnAttacked)
     {
         List<(int, int)> validMoves = new List<(int, int)>();
         // A rook can:
@@ -199,28 +270,28 @@ public class RulesHandler : MonoBehaviour
         // 1. Go right
         for(int i = fromx+1; i<=8;i++)
         {
-            if (!AddMoveInDirection(fromx, fromy, i, fromy, ref validMoves)) break;           
+            if (!AddMoveInDirection(fromx, fromy, i, fromy, ref validMoves,onlyReturnAttacked)) break;           
         }
         // 2. Go left
         for (int i = fromx -1; i >= 1; i--)
         {
-            if (!AddMoveInDirection(fromx, fromy, i, fromy, ref validMoves)) break;
+            if (!AddMoveInDirection(fromx, fromy, i, fromy, ref validMoves, onlyReturnAttacked)) break;
         }
         // 3. Go up
         for (int i = fromy +1; i <= 8; i++)
         {
-            if (!AddMoveInDirection(fromx, fromy, fromx, i, ref validMoves)) break;
+            if (!AddMoveInDirection(fromx, fromy, fromx, i, ref validMoves, onlyReturnAttacked)) break;
         }
         // 4. Go down
         for (int i = fromy - 1; i >= 1; i--)
         {
-            if (!AddMoveInDirection(fromx, fromy, fromx, i, ref validMoves)) break;
+            if (!AddMoveInDirection(fromx, fromy, fromx, i, ref validMoves, onlyReturnAttacked)) break;
         }
 
         return validMoves;
     }
 
-    private List<(int,int)> LegalMovesBishop(int fromx, int fromy)
+    private List<(int,int)> LegalMovesBishop(int fromx, int fromy, bool onlyReturnAttacked)
     {
         List<(int, int)> validMoves = new List<(int, int)>();
         PieceHandler attacker = board[fromx, fromy];
@@ -238,7 +309,7 @@ public class RulesHandler : MonoBehaviour
             if (fromy + j > 8) break;
             // We can re-use the rook code! They are functionally the same, yay!
             // Why is this? Well, it moves in a certain direction until it a: hits a wall, b: hits an enemy, or c: hits a friendly piece
-            if (!AddMoveInDirection(fromx, fromy, i, fromy + j, ref validMoves)) break;
+            if (!AddMoveInDirection(fromx, fromy, i, fromy + j, ref validMoves, onlyReturnAttacked)) break;
             j++;
         }
 
@@ -247,7 +318,7 @@ public class RulesHandler : MonoBehaviour
         for (int i = fromx - 1; i >= 1; i--)
         {
             if (fromy + j > 8) break;
-            if (!AddMoveInDirection(fromx, fromy, i, fromy + j, ref validMoves)) break;
+            if (!AddMoveInDirection(fromx, fromy, i, fromy + j, ref validMoves, onlyReturnAttacked)) break;
             j++;
         }
 
@@ -256,7 +327,7 @@ public class RulesHandler : MonoBehaviour
         for (int i = fromx + 1; i <= 8; i++)
         {
             if (fromy + j < 1) break;
-            if (!AddMoveInDirection(fromx, fromy, i, fromy + j, ref validMoves)) break;
+            if (!AddMoveInDirection(fromx, fromy, i, fromy + j, ref validMoves, onlyReturnAttacked)) break;
             j--;
         }
 
@@ -265,63 +336,86 @@ public class RulesHandler : MonoBehaviour
         for (int i = fromx - 1; i >= 1; i--)
         {
             if (fromy + j < 1) break;
-            if (!AddMoveInDirection(fromx, fromy, i, fromy + j, ref validMoves)) break;
+            if (!AddMoveInDirection(fromx, fromy, i, fromy + j, ref validMoves, onlyReturnAttacked)) break;
             j--;
         }
         return validMoves;
     }
 
-    private List<(int,int)> LegalMovesQueen(int fromx, int fromy)
+    private List<(int,int)> LegalMovesQueen(int fromx, int fromy, bool onlyReturnAttacked)
     {
         // The queen is so simple. Just move like a rook and like a bishop :)
         List<(int, int)> validMoves = new List<(int, int)>();
-        foreach((int,int) move in LegalMovesBishop(fromx,fromy))
+        foreach((int,int) move in LegalMovesBishop(fromx,fromy, onlyReturnAttacked))
         {
             validMoves.Add(move);
         }
-        foreach ((int, int) move in LegalMovesRook(fromx, fromy))
+        foreach ((int, int) move in LegalMovesRook(fromx, fromy, onlyReturnAttacked))
         {
             validMoves.Add(move);
         }
         return validMoves;
     }
 
-    private List<(int,int)> LegalMovesKnight(int fromx, int fromy)
+    private List<(int,int)> LegalMovesKnight(int fromx, int fromy, bool onlyReturnAttacked)
     {
         List<(int, int)> validMoves = new List<(int, int)>();
         PieceHandler attacker = board[fromx, fromy];
 
-        AddMoveHorse(1, 2, attacker, ref validMoves);
-        AddMoveHorse(1, -2, attacker, ref validMoves);
-        AddMoveHorse(-1, 2, attacker, ref validMoves);
-        AddMoveHorse(-1, -2, attacker, ref validMoves);
-        AddMoveHorse(2, 1, attacker, ref validMoves);
-        AddMoveHorse(2, -1, attacker, ref validMoves);
-        AddMoveHorse(-2, 1, attacker, ref validMoves);
-        AddMoveHorse(-2, -1, attacker, ref validMoves);
+        AddValidMove(1, 2, attacker, ref validMoves, onlyReturnAttacked);
+        AddValidMove(1, -2, attacker, ref validMoves,onlyReturnAttacked);
+        AddValidMove(-1, 2, attacker, ref validMoves, onlyReturnAttacked);
+        AddValidMove(-1, -2, attacker, ref validMoves, onlyReturnAttacked);
+        AddValidMove(2, 1, attacker, ref validMoves,onlyReturnAttacked);
+        AddValidMove(2, -1, attacker, ref validMoves,onlyReturnAttacked);
+        AddValidMove(-2, 1, attacker, ref validMoves,onlyReturnAttacked);
+        AddValidMove(-2, -1, attacker, ref validMoves, onlyReturnAttacked);
 
         return validMoves;
     }
 
-    // Adds a move to the knight, if the given move is valid
-    private void AddMoveHorse(int xOffset, int yOffset,PieceHandler attacker, ref List<(int,int)> validMoves)
+    private List<(int,int)> LegalMovesKing(int fromx, int fromy, bool onlyReturnAttacked)
     {
-        if (AttackableSquare(attacker, attacker.x + xOffset, attacker.y + yOffset) && ! MovePutsSelfInCheck(attacker.x,attacker.y,attacker.x+xOffset,attacker.y+yOffset))
+        List<(int, int)> validMoves = new List<(int, int)>();
+
+        // A king can:
+        // 1: Move 1 step in any direction
+        // 2: Castle, ugh
+
+        // 1. Move in any direction
+        for(int i = -1; i <= 1; i++)
+        {
+            for (int j = -1; j <= 1;j++)
+            {
+                if (j == 0 && i == 0) continue;
+                AddValidMove(i, j, board[fromx, fromy], ref validMoves, onlyReturnAttacked);
+            }
+        }
+
+        return validMoves;
+    }
+
+    // Adds a move to the list, if the given move is valid
+    private void AddValidMove(int xOffset, int yOffset,PieceHandler attacker, ref List<(int,int)> validMoves,bool onlyReturnAttacked)
+    {
+        // AttackableSquare also check for check, heh. A check-check
+        if (AttackableSquare(attacker, attacker.x + xOffset, attacker.y + yOffset, onlyReturnAttacked))
         {
             validMoves.Add((attacker.x + xOffset, attacker.y + yOffset));
         }
     }
 
     // Adds a move to the rook in one direction, returns false once an obstacle is encountered
-    private bool AddMoveInDirection(int fromx, int fromy, int xIter, int yIter ,ref List<(int,int)> validMoves)
+    private bool AddMoveInDirection(int fromx, int fromy, int xIter, int yIter ,ref List<(int,int)> validMoves, bool onlyReturnAttacked)
     {
-        if (SquareHasAnEnemy(board[fromx, fromy], xIter, yIter) && ! MovePutsSelfInCheck(fromx,fromy,xIter,yIter))
+        // Conditions: There is an enemy. If we are looking for moves, it must not put us into check. If we are checking attacks, ignore that condition.
+        if (SquareHasAnEnemy(board[fromx, fromy], xIter, yIter) && (onlyReturnAttacked || ! MovePutsSelfInCheck(fromx,fromy,xIter,yIter)))
         {
             // There is an enemy. We can capture it, but can go no further
             validMoves.Add((xIter, yIter));
             return false;
         }
-        else if (board[xIter, yIter] == null && !MovePutsSelfInCheck(fromx, fromy, xIter, yIter))
+        else if (board[xIter, yIter] == null && (onlyReturnAttacked || !MovePutsSelfInCheck(fromx, fromy, xIter, yIter)))
         {
             // Nothing there
             validMoves.Add((xIter, yIter));
@@ -334,12 +428,17 @@ public class RulesHandler : MonoBehaviour
         }
     }
 
-    private bool AttackableSquare(PieceHandler attacker, int x, int y)
+    private bool AttackableSquare(PieceHandler attacker, int x, int y, bool onlyReturnAttacked)
     {
         // The square must be within bounds. 
-        // It can be empty, or it can have an enemy
+        if (!IsSquareValid(x, y)) return false;
+
+        // It can be empty, or have an enemy
+        bool emptyOrEnemy = (IsSquareEmpty(x, y) || SquareHasAnEnemy(attacker, x, y));
+        if (onlyReturnAttacked && emptyOrEnemy) return true;
+
         // And it must not put you into check
-        return (IsSquareValid(x,y) && (IsSquareEmpty(x, y) || SquareHasAnEnemy(attacker, x, y))) && !MovePutsSelfInCheck(attacker.x, attacker.y, x, y);
+        return emptyOrEnemy && !MovePutsSelfInCheck(attacker.x, attacker.y, x, y);
     }
 
     private bool IsSquareValid(int x, int y)
@@ -364,11 +463,38 @@ public class RulesHandler : MonoBehaviour
         boardHandler.SetEnPassant(enPassantSquare);
     }
 
+    // Convert like a4 -> (1,4)
     public (int, int) GetCoordsFromSquareNotation(string not)
     {
         Debug.Assert(not.Length == 2);
         int x = (int)(not[0] - 96);
         int y = (int)(not[1] - 48);
         return (x, y);
+    }
+
+    // This also returns the kings position, so we dont have to loop through the entire board again later
+    public (List<(int, int)>,(int,int)) EnemyAttackedSquares(bool isWhite)
+    {
+        List<(int, int)> attackedSquares = new List<(int, int)>();
+        (int, int) friendlyKingCoords = (0, 0);
+        foreach (PieceHandler p in board)
+        {
+            if (p == null) continue;
+            if (IsWhite(p) != isWhite)
+            {
+                List<(int, int)> attacked = GetMovesOrAttacks(p.x, p.y, true);
+                foreach((int,int) square in attacked)
+                {
+                    attackedSquares.Add(square);
+                }
+            }
+            else if (p.pieceName == 'k' || p.pieceName == 'K')
+            {
+                friendlyKingCoords.Item1 = p.x;
+                friendlyKingCoords.Item2 = p.y;
+            }
+
+        }
+        return (attackedSquares,friendlyKingCoords);
     }
 }

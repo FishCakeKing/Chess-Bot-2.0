@@ -181,6 +181,8 @@ MonoBehaviour:
   whiteKingPrefab: {fileID: 2208238243202805452, guid: a5ccb3bc8e3d8304fa4ca0ce40295f35, type: 3}
   rulesHandler: {fileID: 447794037}
   highLightPrefab: {fileID: 1857992275551871397, guid: 329e93ec72e020b4bbfb36773eaa9f3b, type: 3}
+  blackPieces: []
+  whitePieces: []
   didEnPassant: 0
   castlingRights: 
   enPassantSquare: 
@@ -1200,6 +1202,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boardObject: {fileID: 75234087}
+  dummyPrefab: {fileID: 5229003530692855289, guid: f5537aaf5fc924b49a4b037725faaac1, type: 3}
 --- !u!4 &447794039
 Transform:
   m_ObjectHideFlags: 0
