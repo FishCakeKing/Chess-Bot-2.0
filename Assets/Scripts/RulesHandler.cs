@@ -203,7 +203,7 @@ public class RulesHandler : MonoBehaviour
         // 2.Move 2 steps forward, if it is on the base row
         if (isWhite && fromy == 2 || !isWhite && fromy == 7)
         {
-            if(IsSquareEmpty(fromx,fromy+dir*2) && !onlyReturnAttacked)
+            if(IsSquareEmpty(fromx, fromy + dir) && IsSquareEmpty(fromx,fromy+dir*2) && !onlyReturnAttacked)
             {
                 AddMoveToList(fromx, fromy, fromx, fromy + dir * 2, ref validSquares);
                 enPassantDir = dir;
