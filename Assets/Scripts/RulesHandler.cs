@@ -20,12 +20,17 @@ public class RulesHandler : MonoBehaviour
     private List<PieceHandler> whitePieces;
     private List<PieceHandler> blackPieces;
 
+    private short halfMoveClock;
+    private short fullMoveCounter;
+
 
     void Start()
     {
         boardHandler = boardObject.GetComponent<BoardHandler>();
         whitePieces = new List<PieceHandler>();
         blackPieces = new List<PieceHandler>();
+        fullMoveCounter = boardHandler.GetFullMoveCounter();
+        halfMoveClock = boardHandler.GetHalfMoveClock();
         board = boardHandler.GetBoard();
         enPassantSquare = "-";
     }
@@ -220,9 +225,10 @@ public class RulesHandler : MonoBehaviour
         }
 
         // Capture right
-        if (IsSquareValid(fromx + 1, fromy + dir) && fromx < 8 && SquareHasAnEnemy(board[fromx, fromy], fromx + 1, fromy + dir) && IsSquareValid(fromx+1,fromy+dir))
+        if (IsSquareValid(fromx + 1, fromy + dir) && fromx < 8 && SquareHasAnEnemy(board[fromx, fromy], fromx + 1, fromy + dir))
         {
-            AddMoveToList(fromx, fromy, fromx + 1, fromy + dir, ref validSquares);
+            if (!onlyReturnAttacked) AddMoveToList(fromx, fromy, fromx + 1, fromy + dir, ref validSquares);
+            else validSquares.Add((fromx + 1, fromy + dir));
         }
 
         // 4. En passant
@@ -498,4 +504,16 @@ public class RulesHandler : MonoBehaviour
         }
         return (attackedSquares,friendlyKingCoords);
     }
+
+    public void MakeMove(char pieceType, bool capture)
+    {
+        fullMoveCounter += 1;
+        if (pieceType == 'p' || pieceType == 'P' || capture)
+        {
+            halfMoveClock = 0;
+        }
+        else halfMoveClock += 1;
+    }
+
+    public (short,short) GetCounters() { return (halfMoveClock, fullMoveCounter); }
 }

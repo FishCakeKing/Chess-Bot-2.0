@@ -40,6 +40,7 @@ public class BoardHandler : MonoBehaviour
 
     private PieceHandler[,] board;
 
+    [SerializeField]
     private char activeColor;
     [SerializeField]
     private string castlingRights;
@@ -100,15 +101,16 @@ public class BoardHandler : MonoBehaviour
         return b;
     }
 
-    public void MovePiece(int fromx, int fromy, int tox, int toy)
+    public bool MovePiece(int fromx, int fromy, int tox, int toy)
     {
         // Here we do not validate if this is a valid move! That is done when deciding to move the piece
         PieceHandler tmp = board[fromx, fromy];
         board[fromx, fromy] = null;
-
+        bool capture = false;
         if (board[tox, toy] != null)
         {
             Capture(board[tox, toy].gameObject);
+            capture = true;
         }
         else if(didEnPassant)
         {
@@ -117,10 +119,12 @@ public class BoardHandler : MonoBehaviour
             int dir = toy - fromy;
             Debug.Assert(System.Math.Abs(dir) == 1);
             Capture(board[tox, toy - dir].gameObject);
+            capture = true;
         }
         board[tox, toy] = tmp;
 
         RemoveHighlights();
+        return capture;
     }
 
     // https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
@@ -251,4 +255,11 @@ public class BoardHandler : MonoBehaviour
         }
         activePieceReachableSquares = new List<(int, int)>();
     }
+    public void SetCounters((short,short)counters)
+    {
+        halfmoveClock = counters.Item1;
+        fullmoveNumber = counters.Item2;
+    }
+    public short GetHalfMoveClock() { return halfmoveClock; }
+    public short GetFullMoveCounter() { return fullmoveNumber; }
 }

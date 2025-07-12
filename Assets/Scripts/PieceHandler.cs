@@ -68,7 +68,9 @@ public class PieceHandler : MonoBehaviour
 
         if(rulesHandler.IsMoveLegal(x,y,newCoords.Item1,newCoords.Item2))
         {
-            boardHandler.MovePiece(x, y, newCoords.Item1, newCoords.Item2); // Tell the board handler that we moved
+            bool capture = boardHandler.MovePiece(x, y, newCoords.Item1, newCoords.Item2); // Tell the board handler that we moved
+            rulesHandler.MakeMove(pieceName, capture);
+            boardHandler.SetCounters(rulesHandler.GetCounters());
             snapToGrid(); 
         }
         else
