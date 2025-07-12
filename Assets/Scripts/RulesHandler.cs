@@ -23,6 +23,12 @@ public class RulesHandler : MonoBehaviour
     private short halfMoveClock;
     private short fullMoveCounter;
 
+    private bool blackShortCastle;
+    private bool blackLongCastle;    
+
+    private bool whiteShortCastle;
+    private bool whiteLongCastle;
+
 
     void Start()
     {
@@ -32,6 +38,7 @@ public class RulesHandler : MonoBehaviour
         fullMoveCounter = boardHandler.GetFullMoveCounter();
         halfMoveClock = boardHandler.GetHalfMoveClock();
         board = boardHandler.GetBoard();
+        UpdateCastlingRights(boardHandler.GetCastlingRights());
         enPassantSquare = "-";
     }
 
@@ -40,6 +47,13 @@ public class RulesHandler : MonoBehaviour
     {
         if (fromx == tox && fromy == toy) return false;
         // Call the corresponding movement function
+
+        if(board[fromx,fromy] == null)
+        {
+            // This sometimes still happens after castling. Usually means that something was not assigned properly, or GetMovesOrAttacks was called with the wrong flag
+            print("Tried to move invalid piece at " + fromx + " " + fromy);
+            return false;
+        }
         char piece = board[fromx, fromy].pieceName;
         var legalMoves = GetMovesOrAttacks(fromx, fromy,false);
 
@@ -381,7 +395,7 @@ public class RulesHandler : MonoBehaviour
         return validMoves;
     }
 
-    private List<(int,int)> LegalMovesKing(int fromx, int fromy, bool onlyReturnAttacked)
+    private List<(int, int)> LegalMovesKing(int fromx, int fromy, bool onlyReturnAttacked)
     {
         List<(int, int)> validMoves = new List<(int, int)>();
 
@@ -390,16 +404,68 @@ public class RulesHandler : MonoBehaviour
         // 2: Castle, ugh
 
         // 1. Move in any direction
-        for(int i = -1; i <= 1; i++)
+        for (int i = -1; i <= 1; i++)
         {
-            for (int j = -1; j <= 1;j++)
+            for (int j = -1; j <= 1; j++)
             {
                 if (j == 0 && i == 0) continue;
                 AddValidMove(i, j, board[fromx, fromy], ref validMoves, onlyReturnAttacked);
             }
         }
+        if (onlyReturnAttacked) return validMoves; // Castled squares do not count as attacked squares
+        
+        // 2. Castling
+        // This is dependent on color. Black cant castle unto whites castling square, nuh-uh!
+        // You can't castle through pieces, and can't castle through (or into) check
+        // It is also not possible to castle if the king has moved, or the corresponding rook. This is handled in the "MakeMove" function
+
+        bool isWhite = IsWhite(board[fromx, fromy]);
+
+        // Warning! Ternary operators incoming
+        bool shortCastle = isWhite ? whiteShortCastle : blackShortCastle;
+        bool longCastle  = isWhite ? whiteLongCastle  : blackLongCastle;
+
+        if (!shortCastle && !longCastle) return validMoves; // We can not castle anymore. Do not check further.
+
+        int ylevel = isWhite ? 1 : 8;
+
+        (List<(int, int)> enemyAttackedSquares, (int, int) kingPos) = EnemyAttackedSquares(isWhite);
+
+        if (enemyAttackedSquares.Contains(kingPos)) return validMoves; // You can not castle out of check, for some reason
+
+        Debug.Assert(kingPos == (5, ylevel)); // If this is fails, the king has somehow moved without us knowing. How!?
+
+        if(shortCastle)
+        { 
+            if(RowIsEmptyAndNotAttacked(6,7,ylevel,enemyAttackedSquares))
+            {
+                validMoves.Add((7,ylevel));
+            }
+        }
+        if (longCastle)
+        {
+            if (RowIsEmptyAndNotAttacked(2,4,ylevel,enemyAttackedSquares))
+            {
+                validMoves.Add((2, ylevel));
+            }
+        }
+
 
         return validMoves;
+    }
+
+    private bool RowIsEmptyAndNotAttacked(int fromx, int tox, int y, List<(int, int)> enemyAttackedSquares)
+    {
+        for(int i = fromx; i<=tox;i++)
+        {
+            if (!SquareIsEmptyAndNotAttacked(i, y, enemyAttackedSquares)) return false;
+        }
+        return true;
+    }
+
+    private bool SquareIsEmptyAndNotAttacked(int x, int y, List<(int,int)> enemyAttackedSquares)
+    {
+        return IsSquareEmpty(x, y) && !enemyAttackedSquares.Contains((x, y));
     }
 
     // Adds a move to the list, if the given move is valid
@@ -458,6 +524,11 @@ public class RulesHandler : MonoBehaviour
         if (p.pieceName < 97) return true;
         return false;
     }
+    private bool IsWhite(char name)
+    {
+        if (name < 97) return true;
+        return false;
+    }
 
     private void SetEnPassant(int tox,int fromy)
     {
@@ -505,7 +576,7 @@ public class RulesHandler : MonoBehaviour
         return (attackedSquares,friendlyKingCoords);
     }
 
-    public void MakeMove(char pieceType, bool capture)
+    public void MakeMove(int fromx, int fromy, char pieceType, bool capture, int tox)
     {
         fullMoveCounter += 1;
         if (pieceType == 'p' || pieceType == 'P' || capture)
@@ -513,7 +584,105 @@ public class RulesHandler : MonoBehaviour
             halfMoveClock = 0;
         }
         else halfMoveClock += 1;
+
+        // If the king is moved, it can no longer castle.
+        if(pieceType == 'k' || pieceType == 'K')
+        {
+            if(IsWhite(pieceType))
+            {
+                whiteLongCastle = false;
+                whiteShortCastle = false;
+            }
+            else
+            {
+                blackLongCastle = false;
+                blackShortCastle = false;
+            }
+
+            int ylevel = IsWhite(pieceType) ? 1 : 8;
+
+            if(System.Math.Abs(fromx-tox) > 1)
+            {
+                // Did castle. The king was already moved by the player/engine, now we need to move the rook
+                if(tox == 7)
+                {
+                    // Short castle
+                    board[8, ylevel].x = 6;
+                    board[8, ylevel].transform.position = new Vector2(6,ylevel);
+                    boardHandler.MovePiece(8, ylevel, 6, ylevel);
+                    MakeMove(8, ylevel, 'r', false, 6);
+                }
+
+                if (tox == 2)
+                {
+                    // Long castle
+                    board[1, ylevel].x = 3;
+                    board[1, ylevel].transform.position = new Vector2(3, ylevel);
+                    boardHandler.MovePiece(1, ylevel, 4, ylevel);
+                    MakeMove(1, ylevel, 'r', false, 4);
+                }
+                fullMoveCounter -= 1; // A castle is not 2 moves!
+                halfMoveClock -= 1;
+            }
+        }
+        else if (pieceType == 'K')
+        {
+
+        }
+
+        // If the corresponding rook was moved, that also prevents castling
+        if(pieceType == 'r')
+        {
+            // A black rook was moved. Where was it?
+            if(fromx == 1 && fromy == 8) 
+            {
+                // It was the top left. 
+                blackLongCastle = false;
+            }
+            if (fromx == 8 && fromy == 8)
+            {
+                // It was the top right. 
+                blackShortCastle = false;
+            }
+        }
+        else if (pieceType == 'R')
+        {
+            // White rook
+            if (fromx == 1 && fromy == 1)
+            { 
+                whiteLongCastle = false;
+            }
+            if (fromx == 8 && fromy == 1)
+            {
+                whiteShortCastle = false;
+            }
+        }
     }
 
     public (short,short) GetCounters() { return (halfMoveClock, fullMoveCounter); }
+    public (bool,bool,bool,bool) GetCastlingRights() { return (whiteShortCastle, whiteLongCastle, blackShortCastle, blackLongCastle); }
+
+    private void UpdateCastlingRights(string FENcastling)
+    {
+        foreach(char c in FENcastling)
+        {
+            switch(c)
+            {
+                case 'K':
+                    whiteShortCastle = true;
+                    break;
+                case 'k':
+                    blackShortCastle = true;
+                    break;
+                case 'Q':
+                    whiteLongCastle = true;
+                    break;
+                case 'q':
+                    blackLongCastle = true;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
 }

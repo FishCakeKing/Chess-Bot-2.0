@@ -54,6 +54,7 @@ public class BoardHandler : MonoBehaviour
 
     void Awake()
     {
+        FEN = "rn1qkbnr/pp1bp1pp/5p2/2pp4/4P3/2N2N2/PPPPBPPP/R1BQK2R b KQkq - 3 5";
         blackPieces = new List<GameObject>();
         whitePieces = new List<GameObject>();
         highLights = new List<GameObject>();
@@ -66,7 +67,7 @@ public class BoardHandler : MonoBehaviour
 
         InitializePieceDict();
 
-        PlaceFENNotation("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+        PlaceFENNotation(FEN);
 
     }
 
@@ -255,11 +256,26 @@ public class BoardHandler : MonoBehaviour
         }
         activePieceReachableSquares = new List<(int, int)>();
     }
+    // These two setters (counters and castling) are just for debug, so that we can see what is going on in one place    
     public void SetCounters((short,short)counters)
     {
         halfmoveClock = counters.Item1;
         fullmoveNumber = counters.Item2;
     }
+    public void SetCastling((bool,bool,bool,bool) rights)
+    {
+        //  (whiteShortCastle, whiteLongCastle, blackShortCastle, blackLongCastle)
+        string newRights = "";
+        if (rights.Item1) newRights += "K";
+        if (rights.Item2) newRights += "Q";
+        if (rights.Item3) newRights += "k";
+        if (rights.Item4) newRights += "q";
+        if (newRights.Length == 0) newRights += "-";
+        castlingRights = newRights;
+    }
     public short GetHalfMoveClock() { return halfmoveClock; }
     public short GetFullMoveCounter() { return fullmoveNumber; }
+
+    public string GetCastlingRights() { return castlingRights; }
+
 }
