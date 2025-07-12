@@ -33,6 +33,7 @@ public class RulesHandler : MonoBehaviour
 
     public bool IsMoveLegal(int fromx, int fromy, int tox, int toy)
     {
+        if (fromx == tox && fromy == toy) return false;
         // Call the corresponding movement function
         char piece = board[fromx, fromy].pieceName;
         var legalMoves = GetMovesOrAttacks(fromx, fromy,false);

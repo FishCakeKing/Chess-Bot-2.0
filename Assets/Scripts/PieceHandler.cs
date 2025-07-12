@@ -66,9 +66,6 @@ public class PieceHandler : MonoBehaviour
         isDragging = false;
         var newCoords = GetCoordinates();
 
-        // The piece did not move
-        if (newCoords.Item1 == x && newCoords.Item2 == y) return;
-
         if(rulesHandler.IsMoveLegal(x,y,newCoords.Item1,newCoords.Item2))
         {
             boardHandler.MovePiece(x, y, newCoords.Item1, newCoords.Item2); // Tell the board handler that we moved
@@ -76,9 +73,8 @@ public class PieceHandler : MonoBehaviour
         }
         else
         {
-            print("Nah that is illegal");
+            // Illegal move
         }
-
         transform.position = new Vector2(x, y);
 
     }
