@@ -29,17 +29,34 @@ public class RulesHandler : MonoBehaviour
     private bool whiteShortCastle;
     private bool whiteLongCastle;
 
+    private bool gameOver;
+    private char gameResult;
+    private bool threeFoldRepetition;
+
+    private string currentFEN;
+    private List<string> gamePositionsFEN;
+    private Dictionary<string, int> positionRepetitionCount;
+
+    private char activePlayer;
+
 
     void Start()
     {
+        // Load objects and variables
         boardHandler = boardObject.GetComponent<BoardHandler>();
         whitePieces = new List<PieceHandler>();
         blackPieces = new List<PieceHandler>();
-        fullMoveCounter = boardHandler.GetFullMoveCounter();
-        halfMoveClock = boardHandler.GetHalfMoveClock();
+        positionRepetitionCount = new Dictionary<string, int>();
+        gamePositionsFEN = new List<string>();
+
+        // Load and setup from first FEN
         board = boardHandler.GetBoard();
-        UpdateCastlingRights(boardHandler.GetCastlingRights());
-        enPassantSquare = "-";
+        currentFEN = boardHandler.GetFEN();
+        LoadFromFEN();
+        gameOver = false;
+        threeFoldRepetition = false;
+        gameResult = '-';
+        gamePositionsFEN.Add(currentFEN);
     }
 
 
@@ -90,8 +107,15 @@ public class RulesHandler : MonoBehaviour
        
     }
 
+
+
     public List<(int, int)> GetMovesOrAttacks(int fromx, int fromy,bool onlyReturnAttacks)
     {
+        if(halfMoveClock == 50 || threeFoldRepetition) // Draw by 50 move-rule, or 3-fold repetition
+        {
+            gameResult = 'd'; // d as in draw
+            return new List<(int, int)>();
+        }
         char piece = board[fromx, fromy].pieceName;
         switch (piece)
         {
@@ -576,9 +600,11 @@ public class RulesHandler : MonoBehaviour
         return (attackedSquares,friendlyKingCoords);
     }
 
+    // Called after a move was made, to update everything accordingly.
+    // Also handles castling
     public void MakeMove(int fromx, int fromy, char pieceType, bool capture, int tox)
     {
-        fullMoveCounter += 1;
+        fullMoveCounter += 1;        
         if (pieceType == 'p' || pieceType == 'P' || capture)
         {
             halfMoveClock = 0;
@@ -624,9 +650,6 @@ public class RulesHandler : MonoBehaviour
                 fullMoveCounter -= 1; // A castle is not 2 moves!
                 halfMoveClock -= 1;
             }
-        }
-        else if (pieceType == 'K')
-        {
 
         }
 
@@ -657,16 +680,91 @@ public class RulesHandler : MonoBehaviour
                 whiteShortCastle = false;
             }
         }
+
+        UpdateAndSaveFEN();
+
+        // We have our new FEN, time to save it in a dict and check for 3-fold repetition
+
+        // We can not store the counters etc, since they do not loop
+        // This ugly row below just converts rN1k1br1/4p1pp/p1n2p1n/1pP1q3/3p4/3p1B2/PP1QbP1P/R1B3K1 b - - 2 29 into rN1k1br1/4p1pp/p1n2p1n/1pP1q3/3p4/3p1B2/PP1QbP1P/R1B3K1
+        string position = currentFEN.Substring(0, currentFEN.Length - (currentFEN.Length-currentFEN.IndexOf(' ')));
+        if(!positionRepetitionCount.ContainsKey(position))
+        {
+            positionRepetitionCount.Add(position, 1);
+        }
+        else
+        {
+            positionRepetitionCount[position] += 1;
+            if(positionRepetitionCount[position] >= 3)
+            {
+                threeFoldRepetition = true;
+            }
+        }
+
+
+    }
+
+    public bool ThreeFoldRepetition()
+    {
+        return threeFoldRepetition;
+    }
+
+    // Called after a move was made, to save that move in the list.
+    // Allows for checking for 3-fold repetition
+    // https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
+    private void UpdateAndSaveFEN()
+    {
+        string fenPosition = "";
+        for(int i = 8; i>=1;i--)
+        {
+            short count = 48; // '0' in ascii
+            for(int j = 1;j<=8;j++)
+            {
+                if(board[j,i] != null)
+                {
+                    if(count != 48)
+                    {
+                        fenPosition += (char)count;
+                        count = 48;
+                    }
+                    fenPosition += board[j, i].pieceName; // Ahh the beauty
+                }
+                else
+                {
+                    count += 1;
+                }
+            }
+            if (count != 48)
+            {
+                fenPosition += (char)count;
+                count = 48;
+            }
+            if(i != 1) fenPosition += '/';
+        }
+        fenPosition += " ";
+        fenPosition += activePlayer;
+        fenPosition += " ";
+        fenPosition += GetCastlingString();
+        fenPosition += " ";
+        fenPosition += enPassantSquare;
+        fenPosition += " ";
+        fenPosition += halfMoveClock.ToString();
+        fenPosition += " ";
+        fenPosition += fullMoveCounter.ToString();
+        currentFEN = fenPosition;
+        print(currentFEN);
     }
 
     public (short,short) GetCounters() { return (halfMoveClock, fullMoveCounter); }
     public (bool,bool,bool,bool) GetCastlingRights() { return (whiteShortCastle, whiteLongCastle, blackShortCastle, blackLongCastle); }
 
-    private void UpdateCastlingRights(string FENcastling)
+    private void LoadFromFEN()
     {
-        foreach(char c in FENcastling)
+        var FENparts = currentFEN.Split(' ');
+        string FENcastling = FENparts[2];
+        foreach (char c in FENcastling)
         {
-            switch(c)
+            switch (c)
             {
                 case 'K':
                     whiteShortCastle = true;
@@ -684,5 +782,30 @@ public class RulesHandler : MonoBehaviour
                     break;
             }
         }
+        activePlayer = (char)FENparts[1][0];
+        enPassantSquare = FENparts[3];
+        halfMoveClock = short.Parse(FENparts[4]);
+        fullMoveCounter = short.Parse(FENparts[5]);
+    }
+
+    private string GetCastlingString()
+    {
+        string res = "";
+        if (whiteShortCastle) res += "K";
+        if (whiteLongCastle) res += "Q";
+        if (blackShortCastle) res += "k";
+        if (blackLongCastle) res += "q";
+        if (res.Length == 0) res = "-";
+        return res;
+    }
+
+    public bool IsGameOver()
+    {
+        return gameOver;
+    }
+
+    public char GameResult()
+    {
+        return gameResult;
     }
 }

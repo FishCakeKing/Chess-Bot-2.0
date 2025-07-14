@@ -54,7 +54,7 @@ public class BoardHandler : MonoBehaviour
 
     void Awake()
     {
-        FEN = "rn1qkbnr/pp1bp1pp/5p2/2pp4/4P3/2N2N2/PPPPBPPP/R1BQK2R b KQkq - 3 5";
+        FEN = "rN1k1br1/4p1pp/p1n2p1n/1pP1q3/3p4/3p1B2/PP1QbP1P/R1B3K1 b - - 2 29";
         blackPieces = new List<GameObject>();
         whitePieces = new List<GameObject>();
         highLights = new List<GameObject>();
@@ -166,7 +166,10 @@ public class BoardHandler : MonoBehaviour
 
         FEN = notation;
     }
-
+    public string GetFEN()
+    {
+        return FEN;
+    }
     public void SetEnPassant(string square)
     {
         enPassantSquare = square;
