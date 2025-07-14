@@ -62,15 +62,26 @@ public class RulesHandler : MonoBehaviour
 
     public bool IsMoveLegal(int fromx, int fromy, int tox, int toy)
     {
-        if (fromx == tox && fromy == toy) return false;
         // Call the corresponding movement function
 
+        // Making a non-move is not legal
+        if (fromx == tox && fromy == toy) return false;
+
+        // Follow player order
+        if (IsWhite(board[fromx, fromy]) && activePlayer == 'b' || 
+           !IsWhite(board[fromx, fromy]) && activePlayer == 'w')
+        {
+            return false;
+        }
+
+        // This sometimes still happens after castling. Usually means that something was not assigned properly, or GetMovesOrAttacks was called with the wrong flag
         if(board[fromx,fromy] == null)
         {
-            // This sometimes still happens after castling. Usually means that something was not assigned properly, or GetMovesOrAttacks was called with the wrong flag
             print("Tried to move invalid piece at " + fromx + " " + fromy);
             return false;
         }
+
+        // Okay, we're good to go!
         char piece = board[fromx, fromy].pieceName;
         var legalMoves = GetMovesOrAttacks(fromx, fromy,false);
 
@@ -701,6 +712,8 @@ public class RulesHandler : MonoBehaviour
             }
         }
 
+        TogglePlayer();
+
 
     }
 
@@ -807,5 +820,11 @@ public class RulesHandler : MonoBehaviour
     public char GameResult()
     {
         return gameResult;
+    }
+
+    private void TogglePlayer()
+    {
+        if (activePlayer == 'w') activePlayer = 'b';
+        else activePlayer = 'w';
     }
 }
