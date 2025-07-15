@@ -479,9 +479,9 @@ public class RulesHandler : MonoBehaviour
         }
         if (longCastle)
         {
-            if (RowIsEmptyAndNotAttacked(2,4,ylevel,enemyAttackedSquares))
+            if (RowIsEmptyAndNotAttacked(3,4,ylevel,enemyAttackedSquares))
             {
-                validMoves.Add((2, ylevel));
+                validMoves.Add((3, ylevel));
             }
         }
 
@@ -643,6 +643,7 @@ public class RulesHandler : MonoBehaviour
             }
 
             int ylevel = IsWhite(pieceType) ? 1 : 8;
+            char rookChar = IsWhite(pieceType) ? 'R' : 'r';
 
             if(System.Math.Abs(fromx-tox) > 1)
             {
@@ -653,18 +654,18 @@ public class RulesHandler : MonoBehaviour
                     board[8, ylevel].x = 6;
                     board[8, ylevel].transform.position = new Vector2(6,ylevel);
                     boardHandler.MovePiece(8, ylevel, 6, ylevel);
-                    TogglePlayer();
-                    MakeMove(8, ylevel, 'r', false, 6);
+                    MakeMove(8, ylevel, rookChar, false, 6);
+                    return;
                 }
 
-                if (tox == 2)
+                if (tox == 3)
                 {
                     // Long castle
-                    board[1, ylevel].x = 3;
-                    board[1, ylevel].transform.position = new Vector2(3, ylevel);
+                    board[1, ylevel].x = 4;
+                    board[1, ylevel].transform.position = new Vector2(4, ylevel);
                     boardHandler.MovePiece(1, ylevel, 4, ylevel);
-                    TogglePlayer();
-                    MakeMove(1, ylevel, 'r', false, 4);
+                    MakeMove(1, ylevel, rookChar, false, 4);
+                    return;
                 }
                 fullMoveCounter -= 1; // A castle is not 2 moves!
                 halfMoveClock -= 1;

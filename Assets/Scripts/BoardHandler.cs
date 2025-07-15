@@ -56,7 +56,8 @@ public class BoardHandler : MonoBehaviour
     void Awake()
     {
         //FEN = "rN1k1br1/4p1pp/p1n2p1n/1pP1q3/3p4/3p1B2/PP1QbP1P/R1B3K1 b - - 2 29";
-        FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+        //FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+        FEN = "r3k2r/pbp1ppbp/1pnq1np1/3p4/3P4/1PNQ1NP1/PBP1PPBP/R3K2R w KQkq - 2 9";
         blackPieces = new List<GameObject>();
         whitePieces = new List<GameObject>();
         highLights = new List<GameObject>();

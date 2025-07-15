@@ -181,9 +181,11 @@ MonoBehaviour:
   whiteKingPrefab: {fileID: 2208238243202805452, guid: a5ccb3bc8e3d8304fa4ca0ce40295f35, type: 3}
   rulesHandler: {fileID: 447794037}
   highLightPrefab: {fileID: 1857992275551871397, guid: 329e93ec72e020b4bbfb36773eaa9f3b, type: 3}
+  highLight2Prefab: {fileID: 1857992275551871397, guid: a9d39c332015687449509952350b7833, type: 3}
   blackPieces: []
   whitePieces: []
   didEnPassant: 0
+  activeColor: 0
   castlingRights: 
   enPassantSquare: 
   halfmoveClock: 0
