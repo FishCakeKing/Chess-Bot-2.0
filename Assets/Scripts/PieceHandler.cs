@@ -70,7 +70,7 @@ public class PieceHandler : MonoBehaviour
         {
             bool capture = boardHandler.MovePiece(x, y, newCoords.Item1, newCoords.Item2); // Tell the board handler that we moved
             rulesHandler.MakeMove(x,y,pieceName, capture, newCoords.Item1);
-            boardHandler.SetCounters(rulesHandler.GetCounters());
+            boardHandler.SetCounters(rulesHandler.GetCounters()); // Just for debugging
             boardHandler.SetCastling(rulesHandler.GetCastlingRights());
             snapToGrid(); 
         }
