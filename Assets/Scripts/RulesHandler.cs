@@ -517,10 +517,11 @@ public class RulesHandler : MonoBehaviour
     private bool AddMoveInDirection(int fromx, int fromy, int xIter, int yIter ,ref List<(int,int)> validMoves, bool onlyReturnAttacked)
     {
         // Conditions: There is an enemy. If we are looking for moves, it must not put us into check. If we are checking attacks, ignore that condition.
-        if (SquareHasAnEnemy(board[fromx, fromy], xIter, yIter) && (onlyReturnAttacked || ! MovePutsSelfInCheck(fromx,fromy,xIter,yIter)))
+        if (SquareHasAnEnemy(board[fromx, fromy], xIter, yIter))
         {
             // There is an enemy. We can capture it, but can go no further
-            validMoves.Add((xIter, yIter));
+            if(onlyReturnAttacked || !MovePutsSelfInCheck(fromx, fromy, xIter, yIter))
+                validMoves.Add((xIter, yIter));
             return false;
         }
         else if (board[xIter, yIter] == null && (onlyReturnAttacked || !MovePutsSelfInCheck(fromx, fromy, xIter, yIter)))
@@ -529,10 +530,15 @@ public class RulesHandler : MonoBehaviour
             validMoves.Add((xIter, yIter));
             return true;
         }
-        else
+        else if(board[xIter,yIter] != null)
         {
             // There is a friendly piece there. Don't kill it
             return false;
+        }else
+        {
+            // The square is empty, but moving there puts us into check
+            // However, if we move further, we might be able to do something
+            return true;
         }
     }
 
@@ -765,7 +771,6 @@ public class RulesHandler : MonoBehaviour
         fenPosition += " ";
         fenPosition += fullMoveCounter.ToString();
         currentFEN = fenPosition;
-        print(currentFEN);
     }
 
     public (short,short) GetCounters() { return (halfMoveClock, fullMoveCounter); }

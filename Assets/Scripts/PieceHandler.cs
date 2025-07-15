@@ -91,6 +91,7 @@ public class PieceHandler : MonoBehaviour
             boardHandler.RemoveHighlights();
             boardHandler.activePieceReachableSquares = rulesHandler.GetMovesOrAttacks(x,y,false);
             boardHandler.HighLightSquares(boardHandler.activePieceReachableSquares);
+            boardHandler.HighlightSquare(x, y,true);
         }
     }
 

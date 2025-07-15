@@ -22,6 +22,7 @@ public class BoardHandler : MonoBehaviour
     public GameObject rulesHandler;
 
     public GameObject highLightPrefab;
+    public GameObject highLight2Prefab;
 
     public List<GameObject> blackPieces;
     public List<GameObject> whitePieces;
@@ -245,9 +246,17 @@ public class BoardHandler : MonoBehaviour
         }
     }
 
-    void HighlightSquare(int x, int y)
+    public void HighlightSquare(int x, int y,bool secondaryColor = false)
     {
-        GameObject g = Instantiate(highLightPrefab, new Vector2(x + 0.0f, y + 0.0f), Quaternion.identity, this.transform);
+        GameObject g;
+        if(!secondaryColor)
+        {
+            g = Instantiate(highLightPrefab, new Vector2(x + 0.0f, y + 0.0f), Quaternion.identity, this.transform);
+        }
+        else
+        {
+            g = Instantiate(highLight2Prefab, new Vector2(x + 0.0f, y + 0.0f), Quaternion.identity, this.transform);
+        }
         highLights.Add(g);
     }
 
