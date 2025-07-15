@@ -10,7 +10,7 @@ As per standard of chess programs, FEN notation is used for piece placement. FEN
 
 Let's break down what it means! The first part of the notation shows the locations of the pieces, starting on row 8 column 1. Small characters denote black pieces and upper-case means white pieces. A forward slash / means that the end of the row has been reached, and a number x indicates a gap of x squares with no pieces at all. 
 After a bit of coding, entering this into my chess program looked like this:
-![Starting position](https://github.com/Edvard-vP/Chess-Bot-2.0/Assets/starting_position.PNG)
+![Starting position](https://github.com/Edvard-vP/Chess-Bot-2.0/blob/main/Assets/starting_position.PNG)
 Nice!
 The remaining parts of the FEN notation are, in order:
 
@@ -45,7 +45,7 @@ Here is a quick rundown on how the code finds all legal moves for a rook:
  - If the square contains a friendly piece, stop iterating in that direction.
 
 Repeating this in the four different directions will yield all valid square a rook can move to.
-![Rook movement](https://github.com/Edvard-vP/Chess-Bot-2.0/Assets/rook.PNG)
+![Rook movement](https://github.com/Edvard-vP/Chess-Bot-2.0/blob/main/Assets/rook.PNG)
 
 There is however one major rule that needs to be followed: a move can not put the player into check.
 ## Preventing self-check
@@ -61,17 +61,17 @@ However! There is a risk here of creating an infinite loop. It is very important
 The way I solved this was to simply tell the movement-finder function to *not* look for check when finding all squares the enemy is attacking. This is okay since the enemy is not actually moving in this case, we are the ones making a move.
 
 Here is a quick sanity check to make sure a check can not be ignored:
-![The white bishop can not move only one step](https://github.com/abc/Chess-Bot-2.0/Assets/movement4.PNG)
+![The white bishop can not move only one step](https://github.com/Edvard-vP/Chess-Bot-2.0/blob/main/Assets/movement4.PNG)
 
-![The king must move out of the way](https://github.com/Edvard-vP/Chess-Bot-2.0/Assets/movement5.PNG)
+![The king must move out of the way](https://github.com/Edvard-vP/Chess-Bot-2.0/blob/main/Assets/movement5.PNG)
 
-![The knight only has one valid move](https://github.com/Edvard-vP/Chess-Bot-2.0/Assets/movement6.PNG)
+![The knight only has one valid move](https://github.com/Edvard-vP/Chess-Bot-2.0/blob/main/Assets/movement6.PNG)
 
-![Capturing the attacker also works](https://github.com/Edvard-vP/Chess-Bot-2.0/Assets/movement7.PNG)
+![Capturing the attacker also works](https://github.com/Edvard-vP/Chess-Bot-2.0/blob/main/Assets/movement7.PNG)
 
 ## En passant
 After a pawn is moved to steps forward, the square behind is marked as a possible en passant square. When checking for pawn movements, if the pawn is in the right position, it can capture en passant. After any move has been made, the chance to en passant is lost.
-![Black just moved g pawn two steps forward](https://github.com/Edvard-vP/Chess-Bot-2.0/Assets/enpassant.PNG)
+![Black just moved g pawn two steps forward](https://github.com/Edvard-vP/Chess-Bot-2.0/blob/main/Assets/enpassant.PNG)
 
 ## Castling
 Castling is handled when checking for valid king moves. There are a few caveats to castling, namely some edges cases where castling is *not* allowed:
