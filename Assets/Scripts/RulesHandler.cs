@@ -653,6 +653,7 @@ public class RulesHandler : MonoBehaviour
                     board[8, ylevel].x = 6;
                     board[8, ylevel].transform.position = new Vector2(6,ylevel);
                     boardHandler.MovePiece(8, ylevel, 6, ylevel);
+                    TogglePlayer();
                     MakeMove(8, ylevel, 'r', false, 6);
                 }
 
@@ -662,6 +663,7 @@ public class RulesHandler : MonoBehaviour
                     board[1, ylevel].x = 3;
                     board[1, ylevel].transform.position = new Vector2(3, ylevel);
                     boardHandler.MovePiece(1, ylevel, 4, ylevel);
+                    TogglePlayer();
                     MakeMove(1, ylevel, 'r', false, 4);
                 }
                 fullMoveCounter -= 1; // A castle is not 2 moves!
