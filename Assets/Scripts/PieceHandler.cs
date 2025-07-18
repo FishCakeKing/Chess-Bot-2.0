@@ -82,6 +82,18 @@ public class PieceHandler : MonoBehaviour
 
     }
 
+    public void Move((int,int) newCoords)
+    {
+        if (rulesHandler.IsMoveLegal(x, y, newCoords.Item1, newCoords.Item2))
+        {
+            bool capture = boardHandler.MovePiece(x, y, newCoords.Item1, newCoords.Item2); // Tell the board handler that we moved
+            rulesHandler.MakeMove(x, y, pieceName, capture, newCoords.Item1);
+            boardHandler.SetCounters(rulesHandler.GetCounters()); // Just for debugging
+            boardHandler.SetCastling(rulesHandler.GetCastlingRights());
+            snapToGrid();
+        }
+    }
+
         private void OnMouseDown()
     {
         if (Input.GetMouseButton(0))
@@ -106,6 +118,12 @@ public class PieceHandler : MonoBehaviour
     private (int,int) GetCoordinates()
     {
         return ((int)System.Math.Round(transform.position.x), (int)System.Math.Round(transform.position.y));
+    }
+
+    // Called when non-humans need to move pieces
+    public void MoveTo(int tox, int toy)
+    {
+        transform.position = new Vector2(tox, toy);
     }
 
 }

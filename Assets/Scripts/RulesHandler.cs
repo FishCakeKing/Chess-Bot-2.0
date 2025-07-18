@@ -119,7 +119,6 @@ public class RulesHandler : MonoBehaviour
     }
 
 
-
     public List<(int, int)> GetMovesOrAttacks(int fromx, int fromy,bool onlyReturnAttacks)
     {
         if(halfMoveClock == 50 || threeFoldRepetition) // Draw by 50 move-rule, or 3-fold repetition
@@ -617,6 +616,26 @@ public class RulesHandler : MonoBehaviour
         return (attackedSquares,friendlyKingCoords);
     }
 
+    public List<(int, int, int, int)> GetAllValidMoves(char color)
+    {
+        bool isWhite = IsWhite(color);
+        List<(int,int,int, int)> attackedSquares = new List<(int, int, int, int)>();
+        foreach (PieceHandler p in board)
+        {
+            if (p == null) continue;
+            if (IsWhite(p) == isWhite)
+            {
+                List<(int, int)> attacked = GetMovesOrAttacks(p.x, p.y, false);
+                foreach ((int, int) square in attacked)
+                {
+                    attackedSquares.Add((p.x,p.y,square.Item1,square.Item2));
+                }
+            }
+
+        }
+        return (attackedSquares);
+    }
+
     // Called after a move was made, to update everything accordingly.
     // Also handles castling
     public void MakeMove(int fromx, int fromy, char pieceType, bool capture, int tox)
@@ -731,6 +750,8 @@ public class RulesHandler : MonoBehaviour
         return threeFoldRepetition;
     }
 
+    public string GetFENNotation() { return currentFEN; }
+
     // Called after a move was made, to save that move in the list.
     // Allows for checking for 3-fold repetition
     // https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
@@ -834,5 +855,8 @@ public class RulesHandler : MonoBehaviour
     {
         if (activePlayer == 'w') activePlayer = 'b';
         else activePlayer = 'w';
+        boardHandler.SetActivePlayer(activePlayer); // Just for debuggin and seeing the state of the game
     }
+
+    public char GetActivePlayer() { return activePlayer; }
 }

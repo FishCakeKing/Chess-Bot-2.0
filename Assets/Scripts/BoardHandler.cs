@@ -19,7 +19,8 @@ public class BoardHandler : MonoBehaviour
     public GameObject whiteQueenPrefab;
     public GameObject blackKingPrefab;
     public GameObject whiteKingPrefab;
-    public GameObject rulesHandler;
+    public GameObject rulesHandlerObject;
+    public GameObject engineObject;
 
     public GameObject highLightPrefab;
     public GameObject highLight2Prefab;
@@ -41,6 +42,9 @@ public class BoardHandler : MonoBehaviour
 
     private PieceHandler[,] board;
 
+    private Engine engine;
+    private RulesHandler rulesHandler;
+
     [SerializeField]
     private char activeColor;
     [SerializeField]
@@ -52,12 +56,14 @@ public class BoardHandler : MonoBehaviour
     [SerializeField]
     private short fullmoveNumber;
 
+    [SerializeField]
+    private char engineColor;
 
     void Awake()
     {
         //FEN = "rN1k1br1/4p1pp/p1n2p1n/1pP1q3/3p4/3p1B2/PP1QbP1P/R1B3K1 b - - 2 29";
-        //FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-        FEN = "r3k2r/pbp1ppbp/1pnq1np1/3p4/3P4/1PNQ1NP1/PBP1PPBP/R3K2R w KQkq - 2 9";
+        FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+        //FEN = "r3k2r/pbp1ppbp/1pnq1np1/3p4/3P4/1PNQ1NP1/PBP1PPBP/R3K2R w KQkq - 2 9";
         blackPieces = new List<GameObject>();
         whitePieces = new List<GameObject>();
         highLights = new List<GameObject>();
@@ -65,6 +71,8 @@ public class BoardHandler : MonoBehaviour
         blackCaptures = new List<char>();
         pieceNamePrefabConvertion = new Dictionary<char, GameObject>();
         activePieceReachableSquares = new List<(int, int)>();
+        engine = engineObject.GetComponent<Engine>();
+        rulesHandler = rulesHandlerObject.GetComponent<RulesHandler>();
 
         board = new PieceHandler[9, 9]; // Sorry, but when talking about rows 1-8, worrying about 0-indexing just causes confusion later down the line
 
@@ -76,7 +84,12 @@ public class BoardHandler : MonoBehaviour
 
     void Update()
     {
-
+        if(activeColor == engineColor) // just for debug
+        {
+            var nextMove = engine.GetNextMove();
+            print(nextMove);
+            board[nextMove.Item1, nextMove.Item2].Move((nextMove.Item3, nextMove.Item4));
+        }
     }
 
     GameObject PlacePiece(GameObject piecePrefab,char pieceName, int x, int y)
@@ -87,7 +100,7 @@ public class BoardHandler : MonoBehaviour
         GameObject b = Instantiate(piecePrefab, new Vector2(x, y), Quaternion.identity);
         PieceHandler p = b.GetComponent<PieceHandler>();
         p.pieceName = pieceName;
-        p.rulesHandlerGameObject = rulesHandler;
+        p.rulesHandlerGameObject = rulesHandlerObject;
         p.boardHandlerObject = this.gameObject;
         p.Init();
 
@@ -126,6 +139,7 @@ public class BoardHandler : MonoBehaviour
             capture = true;
         }
         board[tox, toy] = tmp;
+        board[tox, toy].MoveTo(tox, toy);
 
         RemoveHighlights();
         return capture;
@@ -291,5 +305,10 @@ public class BoardHandler : MonoBehaviour
     public short GetFullMoveCounter() { return fullmoveNumber; }
 
     public string GetCastlingRights() { return castlingRights; }
+
+    public void SetActivePlayer(char p)
+    {
+        activeColor = p;
+    }
 
 }
