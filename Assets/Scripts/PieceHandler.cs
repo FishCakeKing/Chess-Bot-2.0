@@ -20,6 +20,9 @@ public class PieceHandler : MonoBehaviour
     public int x, y;
     public char pieceName; // Q = white queen, q = black queen etc
 
+    private bool choosingPromotion;
+
+    private GameObject promotionPane;
 
     public void Init()
     {
@@ -28,12 +31,32 @@ public class PieceHandler : MonoBehaviour
         y = (int)transform.position.y;
         rulesHandler = rulesHandlerGameObject.GetComponent<RulesHandler>();
         boardHandler = boardHandlerObject.GetComponent<BoardHandler>();
+        choosingPromotion = false;
     }
 
     
     void Update()
     {
-        
+        if(choosingPromotion)
+        {
+            if (promotionPane == null)
+            {
+                transform.position = new Vector2(x, y);
+                choosingPromotion = false;
+                return;
+            }
+            if(promotionPane.GetComponent<PromotionHandler>().HasSelectedPiece())
+            {
+                char chosenPiece = promotionPane.GetComponent<PromotionHandler>().GetSelectedPiece();
+                var newCoords = GetCoordinates();
+                string move = boardHandler.GetSquareNotation(newCoords.Item1, newCoords.Item2) + "="+chosenPiece;
+                if (rulesHandler.IsMoveLegal(x, y, move))
+                {
+                    Move(move);
+                }
+                // Here the piece is destroyed
+            }
+        }
     }
 
     private Vector3 GetMouseWorldPosition()
@@ -65,14 +88,28 @@ public class PieceHandler : MonoBehaviour
     {        
         isDragging = false;
         var newCoords = GetCoordinates();
-
-        if(rulesHandler.IsMoveLegal(x,y,newCoords.Item1,newCoords.Item2))
+        // Here we need to spawn an object to choose promotion piece and send that in together with the move
+        string move = boardHandler.GetSquareNotation(newCoords.Item1, newCoords.Item2);
+        
+        if(pieceName == 'p' && newCoords.Item2 == 1 || pieceName == 'P' && newCoords.Item2 == 8)
         {
-            bool capture = boardHandler.MovePiece(x, y, newCoords.Item1, newCoords.Item2); // Tell the board handler that we moved
-            rulesHandler.MakeMove(x,y,pieceName, capture, newCoords.Item1);
-            boardHandler.SetCounters(rulesHandler.GetCounters()); // Just for debugging
-            boardHandler.SetCastling(rulesHandler.GetCastlingRights());
-            snapToGrid(); 
+            choosingPromotion = true;
+            if (pieceName < 97)
+            {
+                promotionPane = Instantiate(boardHandler.promotionPaneWhitePrefab, new Vector3(x, y, 0), Quaternion.identity, this.transform);
+                boardHandler.SetPromotionPane(promotionPane);
+            }
+            else
+            {
+                promotionPane = Instantiate(boardHandler.promotionPaneBlackPrefab, new Vector3(x, y, 0), Quaternion.identity, this.transform);
+                boardHandler.SetPromotionPane(promotionPane);
+            }
+            return;
+        }
+
+        if (rulesHandler.IsMoveLegal(x,y,move))
+        {
+            Move(move);
         }
         else
         {
@@ -82,17 +119,19 @@ public class PieceHandler : MonoBehaviour
 
     }
 
-    public void Move((int,int) newCoords)
+    public void Move(string move)
     {
-        if (rulesHandler.IsMoveLegal(x, y, newCoords.Item1, newCoords.Item2))
+        if (rulesHandler.IsMoveLegal(x, y, move))
         {
-            bool capture = boardHandler.MovePiece(x, y, newCoords.Item1, newCoords.Item2); // Tell the board handler that we moved
-            rulesHandler.MakeMove(x, y, pieceName, capture, newCoords.Item1);
+            (int, int) newCoords = boardHandler.GetCoordsFromSquareNotation(move);
+            bool capture = boardHandler.MovePiece(x, y, move); // Tell the board handler that we moved
+            rulesHandler.MakeMove(x, y, pieceName, capture, newCoords.Item1, newCoords.Item2);
             boardHandler.SetCounters(rulesHandler.GetCounters()); // Just for debugging
             boardHandler.SetCastling(rulesHandler.GetCastlingRights());
             snapToGrid();
         }
     }
+
 
         private void OnMouseDown()
     {
@@ -104,6 +143,7 @@ public class PieceHandler : MonoBehaviour
             boardHandler.activePieceReachableSquares = rulesHandler.GetMovesOrAttacks(x,y,false);
             boardHandler.HighLightSquares(boardHandler.activePieceReachableSquares);
             boardHandler.HighlightSquare(x, y,true);
+            boardHandler.DestroyPromotionPlane();
         }
     }
 

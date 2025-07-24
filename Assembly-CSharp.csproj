@@ -57,6 +57,8 @@
     <Compile Include="Assets\Scripts\RulesHandler.cs" />
     <Compile Include="Assets\Scripts\PieceHandler.cs" />
     <Compile Include="Assets\Scripts\Engine.cs" />
+    <Compile Include="Assets\Scripts\Helpers\Clickable.cs" />
+    <Compile Include="Assets\Scripts\Helpers\PromotionHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

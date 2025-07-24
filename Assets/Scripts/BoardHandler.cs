@@ -25,6 +25,9 @@ public class BoardHandler : MonoBehaviour
     public GameObject highLightPrefab;
     public GameObject highLight2Prefab;
 
+    public GameObject promotionPaneWhitePrefab;
+    public GameObject promotionPaneBlackPrefab;
+
     public List<GameObject> blackPieces;
     public List<GameObject> whitePieces;
     private List<GameObject> highLights;
@@ -34,7 +37,7 @@ public class BoardHandler : MonoBehaviour
 
     private Dictionary<char, GameObject> pieceNamePrefabConvertion;
 
-    public List<(int, int)> activePieceReachableSquares;
+    public List<string> activePieceReachableSquares;
 
     public bool didEnPassant;
 
@@ -44,6 +47,8 @@ public class BoardHandler : MonoBehaviour
 
     private Engine engine;
     private RulesHandler rulesHandler;
+
+    private GameObject promotionPane;
 
     [SerializeField]
     private char activeColor;
@@ -59,6 +64,8 @@ public class BoardHandler : MonoBehaviour
     [SerializeField]
     private char engineColor;
 
+    private bool displayedGameResult;
+
     void Awake()
     {
         //FEN = "rN1k1br1/4p1pp/p1n2p1n/1pP1q3/3p4/3p1B2/PP1QbP1P/R1B3K1 b - - 2 29";
@@ -70,9 +77,11 @@ public class BoardHandler : MonoBehaviour
         whiteCaptures = new List<char>();
         blackCaptures = new List<char>();
         pieceNamePrefabConvertion = new Dictionary<char, GameObject>();
-        activePieceReachableSquares = new List<(int, int)>();
+        activePieceReachableSquares = new List<string>();
         engine = engineObject.GetComponent<Engine>();
         rulesHandler = rulesHandlerObject.GetComponent<RulesHandler>();
+
+        displayedGameResult = false;
 
         board = new PieceHandler[9, 9]; // Sorry, but when talking about rows 1-8, worrying about 0-indexing just causes confusion later down the line
 
@@ -84,11 +93,41 @@ public class BoardHandler : MonoBehaviour
 
     void Update()
     {
-        if(activeColor == engineColor) // just for debug
+        if(rulesHandler.IsGameOver())
         {
-            var nextMove = engine.GetNextMove();
-            print(nextMove);
-            board[nextMove.Item1, nextMove.Item2].Move((nextMove.Item3, nextMove.Item4));
+            if(!displayedGameResult)
+            {
+                displayedGameResult = true;
+                switch(rulesHandler.GameResult())
+                {
+                    case 'b':
+                        print("Black wins!");
+                        break;
+                    case 'w':
+                        print("White wins!");
+                        break;
+                    case 'd':
+                        print("It's a draw!");
+                        break;
+                    default:
+                        print("Unknown game result " + rulesHandler.GameResult());
+                        break;
+                }
+            }
+        }
+        else if(activeColor == engineColor) // just for debug
+        {
+            (int,int,string) nextMove = engine.GetNextMove();
+            if (rulesHandler.IsGameOver())
+            {
+                return;
+            }
+            print(nextMove);            
+            board[nextMove.Item1, nextMove.Item2].Move(nextMove.Item3);
+        }
+        else
+        {
+            rulesHandler.GetAllValidMoves(activeColor);
         }
     }
 
@@ -97,7 +136,7 @@ public class BoardHandler : MonoBehaviour
         Debug.Assert(x >= 1 && y >= 1 && x <= 8 && y <= 8);
         if (x < 1 || y < 1 || x > 8 || y > 8) return null; // The user can never make this happen. If this happens, the code messed up somewhere and we're dead
         
-        GameObject b = Instantiate(piecePrefab, new Vector2(x, y), Quaternion.identity);
+        GameObject b = Instantiate(piecePrefab, new Vector2(x, y), Quaternion.identity,this.transform);
         PieceHandler p = b.GetComponent<PieceHandler>();
         p.pieceName = pieceName;
         p.rulesHandlerGameObject = rulesHandlerObject;
@@ -118,28 +157,62 @@ public class BoardHandler : MonoBehaviour
         return b;
     }
 
-    public bool MovePiece(int fromx, int fromy, int tox, int toy)
+    // Move the piece and handle promotion
+    public bool MovePiece(int fromx, int fromy, string move)
     {
         // Here we do not validate if this is a valid move! That is done when deciding to move the piece
+        (int, int) newCoords = GetCoordsFromSquareNotation(move);
+        bool capture = false;
+
+        // Step 1: Handle promotion
+        if (move.Length == 4)
+        {
+            // Promotion move
+            Debug.Assert(move[2] == '=');
+
+            // Destroy the pawn
+            Destroy(board[fromx, fromy].gameObject);
+
+
+            // Get new piece properties
+            char desiredPiece = move[3];
+
+            // Handle eventual capture
+            if (board[newCoords.Item1, newCoords.Item2] != null)
+            {
+                Capture(board[newCoords.Item1, newCoords.Item2].gameObject);
+                capture = true;
+            }
+
+            // Instantiate the correct prefab
+            GameObject newPieceObj = PlacePiece(pieceNamePrefabConvertion[desiredPiece], desiredPiece, newCoords.Item1, newCoords.Item2);
+            PieceHandler newPiece = newPieceObj.GetComponent<PieceHandler>();
+
+            // Initialize and save
+            board[newCoords.Item1, newCoords.Item2] = newPiece;
+
+            return capture;
+        }
+
+        // Step 2: Handle all non-promotion moves
         PieceHandler tmp = board[fromx, fromy];
         board[fromx, fromy] = null;
-        bool capture = false;
-        if (board[tox, toy] != null)
+        if (board[newCoords.Item1, newCoords.Item2] != null)
         {
-            Capture(board[tox, toy].gameObject);
+            Capture(board[newCoords.Item1, newCoords.Item2].gameObject);
             capture = true;
         }
         else if(didEnPassant)
         {
             // Did en passant
             didEnPassant = false;
-            int dir = toy - fromy;
+            int dir = newCoords.Item2 - fromy;
             Debug.Assert(System.Math.Abs(dir) == 1);
-            Capture(board[tox, toy - dir].gameObject);
+            Capture(board[newCoords.Item1, newCoords.Item2 - dir].gameObject);
             capture = true;
         }
-        board[tox, toy] = tmp;
-        board[tox, toy].MoveTo(tox, toy);
+        board[newCoords.Item1, newCoords.Item2] = tmp;
+        board[newCoords.Item1, newCoords.Item2].MoveTo(newCoords.Item1, newCoords.Item2);
 
         RemoveHighlights();
         return capture;
@@ -253,11 +326,20 @@ public class BoardHandler : MonoBehaviour
     {
         return (char)(x+96) + y.ToString(); // Even more ascii magic. 'a' = 97
     }
-
-    public void HighLightSquares(List<(int,int)> squares)
+    public (int, int) GetCoordsFromSquareNotation(string not)
     {
-        foreach((int,int) square in squares)
+        print(not);
+        Debug.Assert(not.Length == 2 || not.Length == 4 && not[2] == '='); // Normal move or promotion
+        int x = (int)(not[0] - 96);
+        int y = (int)(not[1] - 48);
+        return (x, y);
+    }
+
+    public void HighLightSquares(List<string> squares)
+    {
+        foreach(string squareNotation in squares)
         {
+            (int,int) square = GetCoordsFromSquareNotation(squareNotation);
             HighlightSquare(square.Item1, square.Item2);
         }
     }
@@ -273,6 +355,17 @@ public class BoardHandler : MonoBehaviour
         {
             g = Instantiate(highLight2Prefab, new Vector2(x + 0.0f, y + 0.0f), Quaternion.identity, this.transform);
         }
+        foreach(GameObject square in highLights)
+        {
+            if (square == null) continue;
+            
+            (int,int) position = ((int)square.transform.position.x,(int)square.transform.position.y);
+            if(position == (x,y))
+            {
+                Destroy(g);
+                return;
+            }
+        }
         highLights.Add(g);
     }
 
@@ -282,7 +375,7 @@ public class BoardHandler : MonoBehaviour
         {
             Destroy(a.gameObject);
         }
-        activePieceReachableSquares = new List<(int, int)>();
+        activePieceReachableSquares = new List<string>();
     }
     // These two setters (counters and castling) are just for debug, so that we can see what is going on in one place    
     public void SetCounters((short,short)counters)
@@ -310,5 +403,9 @@ public class BoardHandler : MonoBehaviour
     {
         activeColor = p;
     }
+
+    public void SetPromotionPane(GameObject g) { promotionPane = g; }
+    public void DestroyPromotionPlane() { Destroy(promotionPane); }
+
 
 }
