@@ -66,6 +66,8 @@ public class BoardHandler : MonoBehaviour
 
     private bool displayedGameResult;
 
+    private bool checkForGameoverThisTurn = false;
+
     void Awake()
     {
         //FEN = "rN1k1br1/4p1pp/p1n2p1n/1pP1q3/3p4/3p1B2/PP1QbP1P/R1B3K1 b - - 2 29";
@@ -117,6 +119,7 @@ public class BoardHandler : MonoBehaviour
         }
         else if(activeColor == engineColor) // just for debug
         {
+            checkForGameoverThisTurn = false;
             (int,int,string) nextMove = engine.GetNextMove();
             if (rulesHandler.IsGameOver())
             {
@@ -127,7 +130,11 @@ public class BoardHandler : MonoBehaviour
         }
         else
         {
-            rulesHandler.GetAllValidMoves(activeColor);
+            if(!checkForGameoverThisTurn)
+            {
+                rulesHandler.GetAllValidMoves(activeColor);
+                checkForGameoverThisTurn = true;
+            }
         }
     }
 

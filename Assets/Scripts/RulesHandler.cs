@@ -37,6 +37,8 @@ public class RulesHandler : MonoBehaviour
     private List<string> gamePositionsFEN;
     private Dictionary<string, int> positionRepetitionCount;
 
+    private (List<(int, int)>, (int, int)) enemyAttackedSquares;
+
     private char activePlayer;
 
 
@@ -57,6 +59,7 @@ public class RulesHandler : MonoBehaviour
         threeFoldRepetition = false;
         gameResult = '-';
         gamePositionsFEN.Add(currentFEN);
+        enemyAttackedSquares = EnemyAttackedSquares(IsWhite(activePlayer));
     }
 
 
@@ -130,7 +133,7 @@ public class RulesHandler : MonoBehaviour
             print("Its a draw!");
             return new List<string>();
         }
-        print("Looking for a piece at " + fromx + " " + fromy + " and only attacks is "+onlyReturnAttacks);
+        //print("Looking for a piece at " + fromx + " " + fromy + " and only attacks is "+onlyReturnAttacks);
         char piece = board[fromx, fromy].pieceName;
         switch (piece)
         {
@@ -191,6 +194,8 @@ public class RulesHandler : MonoBehaviour
         backupOfAttacker = board[fromx, fromy];
         backupOfDefender = board[tox, toy]; // This may very well be null
 
+        Debug.Assert((backupOfDefender != null && IsWhite(backupOfDefender) != IsWhite(backupOfAttacker)) || backupOfDefender == null); // Trying to move piece onto a friendly piece
+
         bool isWhite = IsWhite(board[fromx, fromy]);
 
         // Now, make the move, see what happens, and undo it again
@@ -199,8 +204,12 @@ public class RulesHandler : MonoBehaviour
         board[tox, toy] = backupOfAttacker;
 
         // Check for check
-        (List<(int, int)>,(int,int)) enemyAttacked = EnemyAttackedSquares(isWhite);
-        (int, int) kingCoords = enemyAttacked.Item2;
+        // Doing this operation is heavy, so we only do it iff:
+        // 1. An enemy attacks this piece, or the square we move to. In this case a check might be blocked
+        // 2. There is an enemy on the square we are looking at. This might can kill knights checking the king
+        if(enemyAttackedSquares.Item1.Contains((fromx,fromy))|| enemyAttackedSquares.Item1.Contains((tox, toy)) || backupOfAttacker != null)
+            enemyAttackedSquares = EnemyAttackedSquares(isWhite);
+        (int, int) kingCoords = enemyAttackedSquares.Item2;
 
         if(backupOfAttacker.pieceName == 'k' || backupOfAttacker.pieceName=='K')
         {
@@ -210,11 +219,12 @@ public class RulesHandler : MonoBehaviour
             kingCoords.Item2 = toy;
         }
 
-        foreach((int,int) square in enemyAttacked.Item1)
+        foreach((int,int) square in enemyAttackedSquares.Item1)
         {
             if(square == kingCoords)
             {
                 res = true; // Yep, that move would put us into check
+                print("We in check, we are white? "+isWhite);
                 break;
             }
         }
@@ -493,6 +503,14 @@ public class RulesHandler : MonoBehaviour
             for (int j = -1; j <= 1; j++)
             {
                 if (j == 0 && i == 0) continue;
+                if (enemyAttackedSquares.Item1 == null) break;
+
+                if (enemyAttackedSquares.Item1.Contains((fromx+i, fromy+j)) && !onlyReturnAttacked)
+                {
+                    print("YOPP "+(fromx+i)+":"+(fromy+j)+" is attacked");
+                    continue; // Do not capture something that is defended
+                }
+
                 AddValidMove(i, j, board[fromx, fromy], ref validMoves, onlyReturnAttacked);
             }
         }
@@ -513,22 +531,22 @@ public class RulesHandler : MonoBehaviour
 
         int ylevel = isWhite ? 1 : 8;
 
-        (List<(int, int)> enemyAttackedSquares, (int, int) kingPos) = EnemyAttackedSquares(isWhite);
+        (List<(int, int)> enemySquares, (int, int) kingPos) = EnemyAttackedSquares(isWhite);
 
-        if (enemyAttackedSquares.Contains(kingPos)) return validMoves; // You can not castle out of check, for some reason
+        if (enemySquares.Contains(kingPos)) return validMoves; // You can not castle out of check, for some reason
 
         Debug.Assert(kingPos == (5, ylevel)); // If this is fails, the king has somehow moved without us knowing. How!?
 
         if(shortCastle)
         { 
-            if(RowIsEmptyAndNotAttacked(6,7,ylevel,enemyAttackedSquares))
+            if(RowIsEmptyAndNotAttacked(6,7,ylevel, enemySquares))
             {
                 validMoves.Add(GetSquareNotationFromCoords(7,ylevel));
             }
         }
         if (longCastle)
         {
-            if (RowIsEmptyAndNotAttacked(3,4,ylevel,enemyAttackedSquares))
+            if (RowIsEmptyAndNotAttacked(3,4,ylevel, enemySquares))
             {
                 validMoves.Add(GetSquareNotationFromCoords(3, ylevel));
             }
@@ -582,8 +600,15 @@ public class RulesHandler : MonoBehaviour
         else if(board[xIter,yIter] != null)
         {
             // There is a friendly piece there. Don't kill it
+            // However! We are DEFENDING that piece, so a king must not capture it!
+            if(onlyReturnAttacked)
+            {
+                //print("Adding "+ GetSquareNotationFromCoords(xIter, yIter));
+                validMoves.Add(GetSquareNotationFromCoords(xIter, yIter));
+            }
             return false;
-        }else
+        }
+        else
         {
             // The square is empty, but moving there puts us into check
             // However, if we move further, we might be able to do something
@@ -652,7 +677,7 @@ public class RulesHandler : MonoBehaviour
                     attackedSquares.Add(square);
                 }
             }
-            else if (p.pieceName == 'k' || p.pieceName == 'K')
+            else if (p.pieceName == 'k'|| p.pieceName == 'K')
             {
                 friendlyKingCoords.Item1 = p.x;
                 friendlyKingCoords.Item2 = p.y;
@@ -811,7 +836,8 @@ public class RulesHandler : MonoBehaviour
                 gameResult = 'd';
             }
         }
-
+        enemyAttackedSquares = EnemyAttackedSquares(IsWhite(pieceType)); // Call this only once per turn, it is quite heavy-weight
+        print("Enemy attacks " + enemyAttackedSquares.Item1.Count + " squares");
         TogglePlayer();
 
 
