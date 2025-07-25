@@ -11,12 +11,15 @@ public class Engine : MonoBehaviour
     RulesHandler rulesHandler;
     public char activePlayer;
     public char enginePlayer;
+    private bool isWhite;
+
     void Start()
     {
         boardHandler = boardHandlerObject.GetComponent<BoardHandler>();
         board = boardHandler.GetBoard();
         rulesHandler = rulesHandlerObject.GetComponent<RulesHandler>();
         activePlayer = rulesHandler.GetActivePlayer();
+        isWhite = rulesHandler.IsWhite(enginePlayer);
     }
 
     
@@ -43,6 +46,23 @@ public class Engine : MonoBehaviour
             return (-1, -1, "-");
         }
         //print("Returning " + legalMoves[0]);
-        return legalMoves[0];
+        return GetRandomMove(legalMoves);
+    }
+
+    private float EvaluateBoard()
+    {
+        float evaluation = 0.0f;
+
+
+
+        return evaluation;
+    }
+
+    public void SetBoard(PieceHandler[,] newBoard) { board = newBoard; }
+
+    private (int, int, string) GetRandomMove(List<(int, int, string)> legalMoves)
+    {
+        int index = Random.Range(0, legalMoves.Count);
+        return legalMoves[index];
     }
 }

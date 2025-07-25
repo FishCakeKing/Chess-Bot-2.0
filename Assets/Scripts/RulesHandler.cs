@@ -225,7 +225,7 @@ public class RulesHandler : MonoBehaviour
             if(square == kingCoords)
             {
                 res = true; // Yep, that move would put us into check
-                print("We in check, we are white? "+isWhite);
+                //print("We in check, we are white? "+isWhite);
                 break;
             }
         }
@@ -499,6 +499,11 @@ public class RulesHandler : MonoBehaviour
         // 2: Castle, ugh
 
         // 1. Move in any direction
+        if(!onlyReturnAttacked)
+        {
+            enemyAttackedSquares = EnemyAttackedSquares(IsWhite(board[fromx, fromy]));
+        }
+
         for (int i = -1; i <= 1; i++)
         {
             for (int j = -1; j <= 1; j++)
@@ -508,10 +513,11 @@ public class RulesHandler : MonoBehaviour
 
                 if (enemyAttackedSquares.Item1.Contains((fromx+i, fromy+j)) && !onlyReturnAttacked)
                 {
+                    print("Contains " + (fromx + i) + " and " + (fromy + j));
                     continue; // Do not capture something that is defended
                 }
-
                 AddValidMove(i, j, board[fromx, fromy], ref validMoves, onlyReturnAttacked);
+
             }
         }
         if (onlyReturnAttacked) return validMoves; // Castled squares do not count as attacked squares
@@ -896,6 +902,7 @@ public class RulesHandler : MonoBehaviour
         fenPosition += " ";
         fenPosition += fullMoveCounter.ToString();
         currentFEN = fenPosition;
+        boardHandler.SetFEN(currentFEN);
     }
 
     public (short,short) GetCounters() { return (halfMoveClock, fullMoveCounter); }

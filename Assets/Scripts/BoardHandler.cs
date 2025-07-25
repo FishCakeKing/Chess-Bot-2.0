@@ -43,6 +43,7 @@ public class BoardHandler : MonoBehaviour
 
     public bool didEnPassant;
 
+    [SerializeField]
     private string FEN;
 
     private PieceHandler[,] board;
@@ -79,7 +80,7 @@ public class BoardHandler : MonoBehaviour
     {
         //FEN = "rN1k1br1/4p1pp/p1n2p1n/1pP1q3/3p4/3p1B2/PP1QbP1P/R1B3K1 b - - 2 29";
         FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-        //FEN = "r3k2r/pbp1ppbp/1pnq1np1/3p4/3P4/1PNQ1NP1/PBP1PPBP/R3K2R w KQkq - 2 9";
+        //FEN = "4B2N/8/8/k6B/6N1/3K4/8/1q6 w - - 0 1";
         blackPieces = new List<GameObject>();
         whitePieces = new List<GameObject>();
         highLights = new List<GameObject>();
@@ -125,33 +126,32 @@ public class BoardHandler : MonoBehaviour
                 }
             }
         }
-        else if(activeColor == engine1Color) // just for debug
-        {
-            checkForGameoverThisTurn = false;
-            (int,int,string) nextMove = engine.GetNextMove();
-            if (rulesHandler.IsGameOver())
-            {
-                return;
-            }
-            print(board[nextMove.Item1,nextMove.Item2].pieceName+ " "+nextMove.Item3);
-            board[nextMove.Item1, nextMove.Item2].Move(nextMove.Item3);
-        }
-        else
-        {
-            checkForGameoverThisTurn = false;
-            (int, int, string) nextMove = engine2.GetNextMove();
-            if (rulesHandler.IsGameOver())
-            {
-                return;
-            }
-            print(board[nextMove.Item1, nextMove.Item2].pieceName + " " + nextMove.Item3);
-            board[nextMove.Item1, nextMove.Item2].Move(nextMove.Item3);
-            if (!checkForGameoverThisTurn)
-            {
-                rulesHandler.GetAllValidMoves(activeColor);
-                checkForGameoverThisTurn = true;
-            }
-        }
+         else if(activeColor == engine1Color) // just for debug
+         {
+             checkForGameoverThisTurn = false;
+             engine.SetBoard(board);
+             (int,int,string) nextMove = engine.GetNextMove();
+             if (rulesHandler.IsGameOver())
+             {
+                 return;
+             }
+             print(board[nextMove.Item1,nextMove.Item2].pieceName+ " "+nextMove.Item3);
+             board[nextMove.Item1, nextMove.Item2].Move(nextMove.Item3);
+         }
+         else
+         {
+             checkForGameoverThisTurn = false;
+             engine2.SetBoard(board);
+             (int, int, string) nextMove = engine2.GetNextMove();
+             if (rulesHandler.IsGameOver())
+             {
+                 return;
+             }
+             print(board[nextMove.Item1, nextMove.Item2].pieceName + " " + nextMove.Item3);
+             board[nextMove.Item1, nextMove.Item2].Move(nextMove.Item3);
+
+         }
+
     }
 
     GameObject PlacePiece(GameObject piecePrefab,char pieceName, int x, int y)
@@ -183,6 +183,7 @@ public class BoardHandler : MonoBehaviour
     // Move the piece and handle promotion
     public bool MovePiece(int fromx, int fromy, string move)
     {
+        checkForGameoverThisTurn = false;
         // Here we do not validate if this is a valid move! That is done when deciding to move the piece
         (int, int) newCoords = GetCoordsFromSquareNotation(move);
         bool capture = false;
@@ -428,6 +429,8 @@ public class BoardHandler : MonoBehaviour
 
     public void SetPromotionPane(GameObject g) { promotionPane = g; }
     public void DestroyPromotionPlane() { Destroy(promotionPane); }
+
+    public void SetFEN(string fen) { FEN = fen; }
 
 
 }
