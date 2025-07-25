@@ -741,7 +741,7 @@ public class RulesHandler : MonoBehaviour
                 gameResult = isWhite ? 'b' : 'w'; // If white has no moves, black won
             }
 
-            print("Game is over");
+            print("Game is over, "+gameResult);
         }
         return (attackedSquares);
     }
@@ -755,13 +755,9 @@ public class RulesHandler : MonoBehaviour
         if (pieceType == 'p' || pieceType == 'P' || capture)
         {
             halfMoveClock = 0;
-            if(toy == 1 || toy == 8)
-            {
-                // Promotion
-
-            }
         }
         else halfMoveClock += 1;
+
 
         // If the king is moved, it can no longer castle.
         if(pieceType == 'k' || pieceType == 'K')

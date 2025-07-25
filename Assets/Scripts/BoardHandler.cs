@@ -46,12 +46,12 @@ public class BoardHandler : MonoBehaviour
     [SerializeField]
     private string StartingFEN;
 
-    private string FEN;
+    public string FEN;
 
     private PieceHandler[,] board;
 
-    private FirstMoveEngine engine;
-    private Engine engine2;
+    private Engine engine;
+    private RandomMoveEngine engine2;
 
     private int engineOneWins;
     private int engineTwoWins;
@@ -103,8 +103,8 @@ public class BoardHandler : MonoBehaviour
         blackCaptures = new List<char>();
         pieceNamePrefabConvertion = new Dictionary<char, GameObject>();
         activePieceReachableSquares = new List<string>();
-        engine = engineObject.GetComponent<FirstMoveEngine>();
-        engine2 = engine2Object.GetComponent<Engine>();
+        engine = engineObject.GetComponent<Engine>();
+        engine2 = engine2Object.GetComponent<RandomMoveEngine>();
         rulesHandler = rulesHandlerObject.GetComponent<RulesHandler>();
 
         engineOneWins = 0;
@@ -151,9 +151,9 @@ public class BoardHandler : MonoBehaviour
             {
                 return;
             }
-
-            print(board[nextMove.Item1, nextMove.Item2].pieceName + " " + nextMove.Item3);
+            //print(board[nextMove.Item1, nextMove.Item2].pieceName + " " + nextMove.Item3);
             board[nextMove.Item1, nextMove.Item2].Move(nextMove.Item3);
+            FEN = GetFEN();
         }
 
     }

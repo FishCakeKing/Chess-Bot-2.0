@@ -60,6 +60,7 @@
     <Compile Include="Assets\Scripts\PieceHandler.cs" />
     <Compile Include="Assets\Scripts\Engine.cs" />
     <Compile Include="Assets\Scripts\Old Engines\FirstMoveEngine.cs" />
+    <Compile Include="Assets\Scripts\Old Engines\RandomMoveEngine.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
