@@ -724,9 +724,19 @@ public class RulesHandler : MonoBehaviour
 
         if(attackedSquares.Count == 0)
         {
-            // Checkmate!
             gameOver = true;
-            gameResult = isWhite ? 'b' : 'w'; // If white has no moves, black won
+
+            if(!enemyAttackedSquares.Item1.Contains(enemyAttackedSquares.Item2))
+            {
+                // Draw by stalemate!
+                gameResult = 'd'; 
+            }
+            else
+            {
+                // Checkmate!
+                gameResult = isWhite ? 'b' : 'w'; // If white has no moves, black won
+            }
+
             print("Game is over");
         }
         return (attackedSquares);
