@@ -181,6 +181,7 @@ MonoBehaviour:
   whiteKingPrefab: {fileID: 2208238243202805452, guid: a5ccb3bc8e3d8304fa4ca0ce40295f35, type: 3}
   rulesHandlerObject: {fileID: 447794037}
   engineObject: {fileID: 622353863}
+  engine2Object: {fileID: 956615039}
   highLightPrefab: {fileID: 1857992275551871397, guid: 329e93ec72e020b4bbfb36773eaa9f3b, type: 3}
   highLight2Prefab: {fileID: 1857992275551871397, guid: a9d39c332015687449509952350b7833, type: 3}
   promotionPaneWhitePrefab: {fileID: 500727006650666624, guid: 19059415ed3aebe4bb83cc1cb0bed407, type: 3}
@@ -189,12 +190,13 @@ MonoBehaviour:
   whitePieces: []
   activePieceReachableSquares: []
   didEnPassant: 0
-  activeColor: 0
+  activeColor: 119
   castlingRights: 
   enPassantSquare: 
   halfmoveClock: 0
   fullmoveNumber: 0
-  engineColor: 98
+  engine1Color: 119
+  engine2Color: 98
 --- !u!1 &91195421
 GameObject:
   m_ObjectHideFlags: 0
@@ -1667,7 +1669,7 @@ MonoBehaviour:
   boardHandlerObject: {fileID: 75234087}
   rulesHandlerObject: {fileID: 447794037}
   activePlayer: 0
-  enginePlayer: 98
+  enginePlayer: 119
 --- !u!4 &622353865
 Transform:
   m_ObjectHideFlags: 0
@@ -2924,6 +2926,53 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &956615039
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 956615041}
+  - component: {fileID: 956615040}
+  m_Layer: 0
+  m_Name: Engine 2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &956615040
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 956615039}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56a2d383f2ddad04186aed182ca2b116, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  boardHandlerObject: {fileID: 75234087}
+  rulesHandlerObject: {fileID: 447794037}
+  activePlayer: 0
+  enginePlayer: 98
+--- !u!4 &956615041
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 956615039}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 4.756186, y: 1.6802495, z: -6.0676913}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1025872393
 GameObject:
   m_ObjectHideFlags: 0

@@ -20,7 +20,9 @@ public class BoardHandler : MonoBehaviour
     public GameObject blackKingPrefab;
     public GameObject whiteKingPrefab;
     public GameObject rulesHandlerObject;
+
     public GameObject engineObject;
+    public GameObject engine2Object;
 
     public GameObject highLightPrefab;
     public GameObject highLight2Prefab;
@@ -46,6 +48,8 @@ public class BoardHandler : MonoBehaviour
     private PieceHandler[,] board;
 
     private Engine engine;
+    private Engine engine2;
+
     private RulesHandler rulesHandler;
 
     private GameObject promotionPane;
@@ -62,7 +66,10 @@ public class BoardHandler : MonoBehaviour
     private short fullmoveNumber;
 
     [SerializeField]
-    private char engineColor;
+    private char engine1Color;
+
+    [SerializeField]
+    private char engine2Color;
 
     private bool displayedGameResult;
 
@@ -81,6 +88,7 @@ public class BoardHandler : MonoBehaviour
         pieceNamePrefabConvertion = new Dictionary<char, GameObject>();
         activePieceReachableSquares = new List<string>();
         engine = engineObject.GetComponent<Engine>();
+        engine2 = engine2Object.GetComponent<Engine>();
         rulesHandler = rulesHandlerObject.GetComponent<RulesHandler>();
 
         displayedGameResult = false;
@@ -117,7 +125,7 @@ public class BoardHandler : MonoBehaviour
                 }
             }
         }
-        else if(activeColor == engineColor) // just for debug
+        else if(activeColor == engine1Color) // just for debug
         {
             checkForGameoverThisTurn = false;
             (int,int,string) nextMove = engine.GetNextMove();
@@ -125,12 +133,20 @@ public class BoardHandler : MonoBehaviour
             {
                 return;
             }
-            print(nextMove);            
+            print(board[nextMove.Item1,nextMove.Item2].pieceName+ " "+nextMove.Item3);
             board[nextMove.Item1, nextMove.Item2].Move(nextMove.Item3);
         }
         else
         {
-            if(!checkForGameoverThisTurn)
+            checkForGameoverThisTurn = false;
+            (int, int, string) nextMove = engine2.GetNextMove();
+            if (rulesHandler.IsGameOver())
+            {
+                return;
+            }
+            print(board[nextMove.Item1, nextMove.Item2].pieceName + " " + nextMove.Item3);
+            board[nextMove.Item1, nextMove.Item2].Move(nextMove.Item3);
+            if (!checkForGameoverThisTurn)
             {
                 rulesHandler.GetAllValidMoves(activeColor);
                 checkForGameoverThisTurn = true;
@@ -335,7 +351,6 @@ public class BoardHandler : MonoBehaviour
     }
     public (int, int) GetCoordsFromSquareNotation(string not)
     {
-        print(not);
         Debug.Assert(not.Length == 2 || not.Length == 4 && not[2] == '='); // Normal move or promotion
         int x = (int)(not[0] - 96);
         int y = (int)(not[1] - 48);

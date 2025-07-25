@@ -28,8 +28,6 @@ public class Engine : MonoBehaviour
     // int fromx, int fromy, string move
     public (int,int,string) GetNextMove()
     {
-        print("Active is " + activePlayer);
-        print("We is " + enginePlayer);
         List<(int, int, string)> legalMoves = new List<(int, int,string)>();
         float timeLimit = 1f; // needs to be implemented
         activePlayer = rulesHandler.GetActivePlayer();
@@ -44,7 +42,7 @@ public class Engine : MonoBehaviour
             // No legal moves. Checkmate!
             return (-1, -1, "-");
         }
-        print("Returning " + legalMoves[0]);
+        //print("Returning " + legalMoves[0]);
         return legalMoves[0];
     }
 }

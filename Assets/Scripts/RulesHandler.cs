@@ -195,6 +195,7 @@ public class RulesHandler : MonoBehaviour
         backupOfDefender = board[tox, toy]; // This may very well be null
 
         Debug.Assert((backupOfDefender != null && IsWhite(backupOfDefender) != IsWhite(backupOfAttacker)) || backupOfDefender == null); // Trying to move piece onto a friendly piece
+        Debug.Assert((backupOfDefender != null && IsWhite(backupOfDefender) != IsWhite(backupOfAttacker)) || backupOfDefender == null); // Trying to move piece onto a friendly piece
 
         bool isWhite = IsWhite(board[fromx, fromy]);
 
@@ -507,7 +508,6 @@ public class RulesHandler : MonoBehaviour
 
                 if (enemyAttackedSquares.Item1.Contains((fromx+i, fromy+j)) && !onlyReturnAttacked)
                 {
-                    print("YOPP "+(fromx+i)+":"+(fromy+j)+" is attacked");
                     continue; // Do not capture something that is defended
                 }
 
@@ -634,13 +634,15 @@ public class RulesHandler : MonoBehaviour
         return x <= 8 && x >= 1 && y <= 8 && y >= 1;
     }
 
-    private bool IsWhite(PieceHandler p)
+    public bool IsWhite(PieceHandler p)
     {
+        if (p.pieceName == 'w') return true;
         if (p.pieceName < 97) return true;
         return false;
     }
-    private bool IsWhite(char name)
+    public bool IsWhite(char name)
     {
+        if (name == 'w') return true;
         if (name < 97) return true;
         return false;
     }
@@ -671,6 +673,7 @@ public class RulesHandler : MonoBehaviour
             if (IsWhite(p) != isWhite)
             {
                 List<string> attacked = GetMovesOrAttacks(p.x, p.y, true);
+                if (gameOver) return (new List<(int,int)>(),(-1,-1));
                 foreach(string squareNotation in attacked)
                 {
                     (int, int) square = GetCoordsFromSquareNotation(squareNotation);
@@ -837,7 +840,7 @@ public class RulesHandler : MonoBehaviour
             }
         }
         enemyAttackedSquares = EnemyAttackedSquares(IsWhite(pieceType)); // Call this only once per turn, it is quite heavy-weight
-        print("Enemy attacks " + enemyAttackedSquares.Item1.Count + " squares");
+        //print("Enemy attacks " + enemyAttackedSquares.Item1.Count + " squares");
         TogglePlayer();
 
 
