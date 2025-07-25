@@ -44,12 +44,18 @@ public class BoardHandler : MonoBehaviour
     public bool didEnPassant;
 
     [SerializeField]
+    private string StartingFEN;
+
     private string FEN;
 
     private PieceHandler[,] board;
 
-    private Engine engine;
+    private FirstMoveEngine engine;
     private Engine engine2;
+
+    private int engineOneWins;
+    private int engineTwoWins;
+    private int draws;
 
     private RulesHandler rulesHandler;
 
@@ -65,6 +71,8 @@ public class BoardHandler : MonoBehaviour
     private short halfmoveClock;
     [SerializeField]
     private short fullmoveNumber;
+    [SerializeField]
+    private bool enableEngines;
 
     [SerializeField]
     private char engine1Color;
@@ -74,12 +82,19 @@ public class BoardHandler : MonoBehaviour
 
     private bool displayedGameResult;
 
-    private bool checkForGameoverThisTurn = false;
+    private bool displayedTournamentResults;
+
+    private bool checkForGameoverThisTurn;
+
+    private (int, int, string) nextMove;
+
+    [SerializeField]
+    private int tournamentGames;
 
     void Awake()
     {
         //FEN = "rN1k1br1/4p1pp/p1n2p1n/1pP1q3/3p4/3p1B2/PP1QbP1P/R1B3K1 b - - 2 29";
-        FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+        FEN = StartingFEN;//"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
         //FEN = "4B2N/8/8/k6B/6N1/3K4/8/1q6 w - - 0 1";
         blackPieces = new List<GameObject>();
         whitePieces = new List<GameObject>();
@@ -88,11 +103,17 @@ public class BoardHandler : MonoBehaviour
         blackCaptures = new List<char>();
         pieceNamePrefabConvertion = new Dictionary<char, GameObject>();
         activePieceReachableSquares = new List<string>();
-        engine = engineObject.GetComponent<Engine>();
+        engine = engineObject.GetComponent<FirstMoveEngine>();
         engine2 = engine2Object.GetComponent<Engine>();
         rulesHandler = rulesHandlerObject.GetComponent<RulesHandler>();
 
+        engineOneWins = 0;
+        engineTwoWins = 0;
+        draws = 0;
+
         displayedGameResult = false;
+        displayedTournamentResults = false;
+        checkForGameoverThisTurn = false;
 
         board = new PieceHandler[9, 9]; // Sorry, but when talking about rows 1-8, worrying about 0-indexing just causes confusion later down the line
 
@@ -104,53 +125,36 @@ public class BoardHandler : MonoBehaviour
 
     void Update()
     {
-        if(rulesHandler.IsGameOver())
+         if(rulesHandler.IsGameOver())
+         {
+             HandleGameOver();
+             return;
+         }
+         
+         checkForGameoverThisTurn = false;
+        if (enableEngines)
         {
-            if(!displayedGameResult)
+            if (activeColor == engine1Color) // just for debug
             {
-                displayedGameResult = true;
-                switch(rulesHandler.GameResult())
-                {
-                    case 'b':
-                        print("Black wins!");
-                        break;
-                    case 'w':
-                        print("White wins!");
-                        break;
-                    case 'd':
-                        print("It's a draw!");
-                        break;
-                    default:
-                        print("Unknown game result " + rulesHandler.GameResult());
-                        break;
-                }
-            }
-        }
-         else if(activeColor == engine1Color) // just for debug
-         {
-             checkForGameoverThisTurn = false;
-             engine.SetBoard(board);
-             (int,int,string) nextMove = engine.GetNextMove();
-             if (rulesHandler.IsGameOver())
-             {
-                 return;
-             }
-             print(board[nextMove.Item1,nextMove.Item2].pieceName+ " "+nextMove.Item3);
-             board[nextMove.Item1, nextMove.Item2].Move(nextMove.Item3);
-         }
-         else
-         {
-             checkForGameoverThisTurn = false;
-             engine2.SetBoard(board);
-             (int, int, string) nextMove = engine2.GetNextMove();
-             if (rulesHandler.IsGameOver())
-             {
-                 return;
-             }
-             print(board[nextMove.Item1, nextMove.Item2].pieceName + " " + nextMove.Item3);
-             board[nextMove.Item1, nextMove.Item2].Move(nextMove.Item3);
+                engine.SetBoard(board);
+                nextMove = engine.GetNextMove();
 
-         }
+            }
+            
+            else if(activeColor == engine2Color)
+            {
+                engine2.SetBoard(board);
+                nextMove = engine2.GetNextMove();
+            }
+
+            if (rulesHandler.IsGameOver())
+            {
+                return;
+            }
+
+            print(board[nextMove.Item1, nextMove.Item2].pieceName + " " + nextMove.Item3);
+            board[nextMove.Item1, nextMove.Item2].Move(nextMove.Item3);
+        }
 
     }
 
@@ -308,20 +312,54 @@ public class BoardHandler : MonoBehaviour
         Destroy(capturee); // The capturee is puree
     }
 
+    void HandleTournament()
+    {
+        if(rulesHandler.IsGameOver() && ! displayedTournamentResults)
+        {
+            switch (rulesHandler.GameResult())
+            {
+                case 'b':
+                    if (engine1Color == 'b') engineOneWins += 1;
+                    else engineTwoWins += 1;
+                    break;
+                case 'w':
+                    if (engine1Color == 'w') engineOneWins += 1;
+                    else engineTwoWins += 1;
+                    break;
+                case 'd':
+                    draws += 1;
+                    break;
+                default:
+                    print("Unknown game result " + rulesHandler.GameResult());
+                    break;
+            }
+
+
+            if(engineOneWins+engineTwoWins+draws <= tournamentGames)
+            {
+                RemoveHighlights();
+                ClearBoard();
+                PlaceFENNotation(StartingFEN);
+                rulesHandler.Reset();
+            }
+            else
+            {
+                displayedTournamentResults = true;
+                print("Match results: ");
+                print("Engine one wins: "+engineOneWins);
+                print("Engine two wins: " + engineTwoWins);
+                print("Draws: " + draws);
+            }
+        }
+    }
+
     void ClearBoard()
     {
-        foreach (GameObject p in blackPieces)
+        foreach(PieceHandler p in board)
         {
-            PieceHandler piece = p.GetComponent<PieceHandler>();
-            board[piece.x, piece.y] = null;
-            Destroy(p);
+            if (p != null) Destroy(p.gameObject);
         }
-        foreach (GameObject p in whitePieces)
-        {
-            PieceHandler piece = p.GetComponent<PieceHandler>();
-            board[piece.x, piece.y] = null;
-            Destroy(p);
-        }
+        board = new PieceHandler[9, 9];
     }
 
     void InitializePieceDict()
@@ -400,6 +438,31 @@ public class BoardHandler : MonoBehaviour
         }
         activePieceReachableSquares = new List<string>();
     }
+
+    private void HandleGameOver()
+    {
+        if (!displayedGameResult)
+        {
+            displayedGameResult = true;
+            switch (rulesHandler.GameResult())
+            {
+                case 'b':
+                    print("Black wins!");
+                    break;
+                case 'w':
+                    print("White wins!");
+                    break;
+                case 'd':
+                    print("It's a draw!");
+                    break;
+                default:
+                    print("Unknown game result " + rulesHandler.GameResult());
+                    break;
+            }
+        }
+        HandleTournament();
+    }
+
     // These two setters (counters and castling) are just for debug, so that we can see what is going on in one place    
     public void SetCounters((short,short)counters)
     {

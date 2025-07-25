@@ -190,14 +190,16 @@ MonoBehaviour:
   whitePieces: []
   activePieceReachableSquares: []
   didEnPassant: 0
-  FEN: 
+  StartingFEN: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
   activeColor: 119
   castlingRights: 
   enPassantSquare: 
   halfmoveClock: 0
   fullmoveNumber: 0
-  engine1Color: 119
-  engine2Color: 98
+  enableEngines: 1
+  engine1Color: 98
+  engine2Color: 119
+  tournamentGames: 50
 --- !u!1 &91195421
 GameObject:
   m_ObjectHideFlags: 0
@@ -1647,7 +1649,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 622353865}
-  - component: {fileID: 622353864}
+  - component: {fileID: 622353866}
   m_Layer: 0
   m_Name: Engine
   m_TagString: Untagged
@@ -1655,22 +1657,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &622353864
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 622353863}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 56a2d383f2ddad04186aed182ca2b116, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  boardHandlerObject: {fileID: 75234087}
-  rulesHandlerObject: {fileID: 447794037}
-  activePlayer: 0
-  enginePlayer: 119
 --- !u!4 &622353865
 Transform:
   m_ObjectHideFlags: 0
@@ -1685,6 +1671,22 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &622353866
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 622353863}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 674973653cd11554a906f49cca0d0cbf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  boardHandlerObject: {fileID: 75234087}
+  rulesHandlerObject: {fileID: 447794037}
+  activePlayer: 0
+  enginePlayer: 98
 --- !u!1 &641282180
 GameObject:
   m_ObjectHideFlags: 0
@@ -2959,7 +2961,7 @@ MonoBehaviour:
   boardHandlerObject: {fileID: 75234087}
   rulesHandlerObject: {fileID: 447794037}
   activePlayer: 0
-  enginePlayer: 98
+  enginePlayer: 119
 --- !u!4 &956615041
 Transform:
   m_ObjectHideFlags: 0

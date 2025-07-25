@@ -126,8 +126,9 @@ public class RulesHandler : MonoBehaviour
 
     public List<string> GetMovesOrAttacks(int fromx, int fromy,bool onlyReturnAttacks)
     {
-        if(halfMoveClock == 50 || threeFoldRepetition) // Draw by 50 move-rule, or 3-fold repetition
+        if(halfMoveClock >= 50 || threeFoldRepetition) // Draw by 50 move-rule, or 3-fold repetition
         {
+            if (halfMoveClock >= 50) print("Draw by 50 move rule!");
             gameResult = 'd'; // d as in draw
             gameOver = true;
             print("Its a draw!");
@@ -194,7 +195,11 @@ public class RulesHandler : MonoBehaviour
         backupOfAttacker = board[fromx, fromy];
         backupOfDefender = board[tox, toy]; // This may very well be null
 
-        Debug.Assert((backupOfDefender != null && IsWhite(backupOfDefender) != IsWhite(backupOfAttacker)) || backupOfDefender == null); // Trying to move piece onto a friendly piece
+        if(!((backupOfDefender != null && IsWhite(backupOfDefender) != IsWhite(backupOfAttacker)) || backupOfDefender == null))
+        {
+            Debug.Log("What!! We are trying to move from " + fromx + ":" + fromy + " with our " + board[fromx, fromy].pieceName + " onto " + tox + ":" + toy + " where there is a " + board[tox, toy].pieceName);
+            Debug.Break();
+        }
         Debug.Assert((backupOfDefender != null && IsWhite(backupOfDefender) != IsWhite(backupOfAttacker)) || backupOfDefender == null); // Trying to move piece onto a friendly piece
 
         bool isWhite = IsWhite(board[fromx, fromy]);
@@ -361,7 +366,7 @@ public class RulesHandler : MonoBehaviour
     
     private void HandlePromotion(int fromx,int tox, int fromy,int dir ,bool isWhite,bool onlyReturnAttacked,ref List<string> validSquares)
     {
-        if (!onlyReturnAttacked && !MovePutsSelfInCheck(fromx, fromy, fromx, fromy + dir))
+        if (!onlyReturnAttacked && !MovePutsSelfInCheck(fromx, fromy, tox, fromy + dir))
         {
             char bishop = isWhite ? 'B' : 'b';
             char queen = isWhite ? 'Q' : 'q';
@@ -513,7 +518,6 @@ public class RulesHandler : MonoBehaviour
 
                 if (enemyAttackedSquares.Item1.Contains((fromx+i, fromy+j)) && !onlyReturnAttacked)
                 {
-                    print("Contains " + (fromx + i) + " and " + (fromy + j));
                     continue; // Do not capture something that is defended
                 }
                 AddValidMove(i, j, board[fromx, fromy], ref validMoves, onlyReturnAttacked);
@@ -848,8 +852,9 @@ public class RulesHandler : MonoBehaviour
         else
         {
             positionRepetitionCount[position] += 1;
-            if(positionRepetitionCount[position] >= 3)
+            if (positionRepetitionCount[position] >= 3)
             {
+                print("Draw by 3-fold repetition");
                 threeFoldRepetition = true;
                 gameOver = true;
                 gameResult = 'd';
@@ -992,6 +997,22 @@ public class RulesHandler : MonoBehaviour
         char square = (char)(fromx + 96);
         char number = (char)(fromy + 48);
         return square.ToString() + number.ToString();
+    }
+
+    public void Reset()
+    {
+        whitePieces = new List<PieceHandler>();
+        blackPieces = new List<PieceHandler>();
+        positionRepetitionCount = new Dictionary<string, int>();
+        gamePositionsFEN = new List<string>();
+        board = boardHandler.GetBoard();
+        currentFEN = boardHandler.GetFEN();
+        LoadFromFEN();
+        gameOver = false;
+        threeFoldRepetition = false;
+        gameResult = '-';
+        gamePositionsFEN.Add(currentFEN);
+        enemyAttackedSquares = EnemyAttackedSquares(IsWhite(activePlayer));
     }
 
 }

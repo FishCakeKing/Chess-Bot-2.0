@@ -4,6 +4,25 @@ using UnityEngine;
 
 public class Engine : MonoBehaviour
 {
+    // Random moves engine!
+
+    // Matches against "First Move Served"-engine
+    // Wins as white: 21/50
+    // Losses:         1/50
+    // Draws:         29/50
+
+    // Wins as black: 14/50
+    // Losses:         0/50
+    // Draws:         37/50
+
+    // Total loss rate against "First Move Served": 1/100
+
+    // Matches against me (human):
+    // Wins as white:         0/5
+    // Losses:                5/5
+ 
+    // Status: Better than picking the first move, but very dumb (obviously)
+
     public GameObject boardHandlerObject;
     public GameObject rulesHandlerObject;
     PieceHandler[,] board;
