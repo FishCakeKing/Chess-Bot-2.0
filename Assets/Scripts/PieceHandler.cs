@@ -53,7 +53,7 @@ public class PieceHandler : MonoBehaviour
                 char chosenPiece = promotionPane.GetComponent<PromotionHandler>().GetSelectedPiece();
                 var newCoords = GetCoordinates();
                 string move = boardHandler.GetSquareNotation(newCoords.Item1, newCoords.Item2) + "="+chosenPiece;
-                if (rulesHandler.IsMoveLegal(x, y, move))
+                if (rulesHandler.IsMoveLegal(x, y, move,boardHandler.GetBoard()))
                 {
                     Move(move);
                 }
@@ -110,7 +110,7 @@ public class PieceHandler : MonoBehaviour
             return;
         }
 
-        if (rulesHandler.IsMoveLegal(x,y,move))
+        if (rulesHandler.IsMoveLegal(x,y,move,boardHandler.GetBoard()))
         {
             Move(move);
         }
@@ -126,7 +126,7 @@ public class PieceHandler : MonoBehaviour
 
     public void Move(string move)
     {
-        if (rulesHandler.IsMoveLegal(x, y, move))
+        if (rulesHandler.IsMoveLegal(x, y, move,boardHandler.GetBoard()))
         {
             (int, int) newCoords = boardHandler.GetCoordsFromSquareNotation(move);
             bool capture = boardHandler.MovePiece(x, y, move); // Tell the board handler that we moved
@@ -157,7 +157,7 @@ public class PieceHandler : MonoBehaviour
             offset = transform.position - GetMouseWorldPosition();
             boardHandler.RemoveHighlights();
             
-            boardHandler.activePieceReachableSquares = rulesHandler.GetMovesOrAttacks(x,y,false);
+            boardHandler.activePieceReachableSquares = rulesHandler.GetMovesOrAttacks(x,y,false,boardHandler.GetBoard());
             print("Attacks gotten");
             boardHandler.HighLightSquares(boardHandler.activePieceReachableSquares);
             boardHandler.HighlightSquare(x, y,true);

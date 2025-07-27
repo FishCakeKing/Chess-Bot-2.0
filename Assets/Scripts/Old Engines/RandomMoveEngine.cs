@@ -25,7 +25,7 @@ public class RandomMoveEngine : MonoBehaviour
 
     public GameObject boardHandlerObject;
     public GameObject rulesHandlerObject;
-    PieceHandler[,] board;
+    Piece[,] board;
     BoardHandler boardHandler;
     RulesHandler rulesHandler;
     public char activePlayer;
@@ -35,7 +35,7 @@ public class RandomMoveEngine : MonoBehaviour
     void Start()
     {
         boardHandler = boardHandlerObject.GetComponent<BoardHandler>();
-        board = boardHandler.GetPHBoard();
+        board = boardHandler.GetBoard();
         rulesHandler = rulesHandlerObject.GetComponent<RulesHandler>();
         activePlayer = rulesHandler.GetActivePlayer();
         isWhite = rulesHandler.IsWhite(enginePlayer);
@@ -52,8 +52,9 @@ public class RandomMoveEngine : MonoBehaviour
     {
         List<(int, int, string)> legalMoves = new List<(int, int, string)>();
         activePlayer = rulesHandler.GetActivePlayer();
+        board = boardHandler.GetBoard();
         if (activePlayer == enginePlayer)
-            legalMoves = rulesHandler.GetAllValidMoves(enginePlayer);
+            legalMoves = rulesHandler.GetAllValidMoves(enginePlayer,board);
         else
         {
             print("Called at the wrong time");
@@ -76,7 +77,19 @@ public class RandomMoveEngine : MonoBehaviour
         return evaluation;
     }
 
-    public void SetBoard(PieceHandler[,] newBoard) { board = newBoard; }
+    public void SetBoard(PieceHandler[,] newBoard)
+    {
+        for (int i = 1; i <= 8; i++)
+        {
+            for (int j = 1; j <= 8; j++)
+            {
+                if (newBoard[i, j] != null)
+                    board[i, j] = new Piece(i, j, newBoard[i, j].pieceName);
+                else
+                    board[i, j] = null;
+            }
+        }
+    }
 
     private (int, int, string) GetRandomMove(List<(int, int, string)> legalMoves)
     {

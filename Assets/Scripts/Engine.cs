@@ -44,7 +44,7 @@ public class Engine : MonoBehaviour
         float timeLimit = 1f; // needs to be implemented
         activePlayer = rulesHandler.GetActivePlayer();
         if(activePlayer == enginePlayer)
-            legalMoves = rulesHandler.GetAllValidMoves(enginePlayer);
+            legalMoves = rulesHandler.GetAllValidMoves(enginePlayer,board);
         else
         {
             print("Called at the wrong time");
@@ -138,6 +138,8 @@ public class Engine : MonoBehaviour
         if(move.Item3.Length == 2)
         {
             testBoard[newCoords.Item1, newCoords.Item2] = tmp;
+            testBoard[newCoords.Item1, newCoords.Item2].x = tmp.x;
+            testBoard[newCoords.Item1, newCoords.Item2].y = tmp.y;
         }
         else
         {

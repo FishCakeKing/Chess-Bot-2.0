@@ -31,7 +31,7 @@ public class FirstMoveEngine : MonoBehaviour
         List<(int, int, string)> legalMoves = new List<(int, int, string)>();
         activePlayer = rulesHandler.GetActivePlayer();
         if (activePlayer == enginePlayer)
-            legalMoves = rulesHandler.GetAllValidMoves(enginePlayer);
+            legalMoves = rulesHandler.GetAllValidMoves(enginePlayer,board);
         else
         {
             print("Called at the wrong time");

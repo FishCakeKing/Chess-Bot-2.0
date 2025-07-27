@@ -59,11 +59,11 @@ public class RulesHandler : MonoBehaviour
         threeFoldRepetition = false;
         gameResult = '-';
         gamePositionsFEN.Add(currentFEN);
-        enemyAttackedSquares = EnemyAttackedSquares(IsWhite(activePlayer));
+        enemyAttackedSquares = EnemyAttackedSquares(IsWhite(activePlayer),board);
     }
 
 
-    public bool IsMoveLegal(int fromx, int fromy, string move)
+    public bool IsMoveLegal(int fromx, int fromy, string move,Piece[,] otherBoard)
     {
         // Call the corresponding movement function
         // Making a non-move is not legal
@@ -71,8 +71,8 @@ public class RulesHandler : MonoBehaviour
         if (from==move) return false;
 
         // Follow player order
-        if (IsWhite(board[fromx, fromy]) && activePlayer == 'b' || 
-           !IsWhite(board[fromx, fromy]) && activePlayer == 'w')
+        if (IsWhite(otherBoard[fromx, fromy]) && activePlayer == 'b' || 
+           !IsWhite(otherBoard[fromx, fromy]) && activePlayer == 'w')
         {
             return false;
         }
@@ -86,8 +86,8 @@ public class RulesHandler : MonoBehaviour
         (int, int) coords = GetCoordsFromSquareNotation(move);
 
         // Okay, we're good to go!
-        char piece = board[fromx, fromy].pieceName;
-        var legalMoves = GetMovesOrAttacks(fromx, fromy,false);
+        char piece = otherBoard[fromx, fromy].pieceName;
+        var legalMoves = GetMovesOrAttacks(fromx, fromy,false, otherBoard);
 
         if(piece == 'p' || piece == 'P')
         {
@@ -123,7 +123,7 @@ public class RulesHandler : MonoBehaviour
     }
 
 
-    public List<string> GetMovesOrAttacks(int fromx, int fromy,bool onlyReturnAttacks)
+    public List<string> GetMovesOrAttacks(int fromx, int fromy,bool onlyReturnAttacks,Piece[,] otherBoard)
     {
         if(halfMoveClock >= 50 || threeFoldRepetition) // Draw by 50 move-rule, or 3-fold repetition
         {
@@ -135,83 +135,83 @@ public class RulesHandler : MonoBehaviour
         }
         //if(!onlyReturnAttacks)print("Looking for a piece at " + fromx + " " + fromy + " and only attacks is "+onlyReturnAttacks);
         //print("Gettin ready to check " + fromx + ":" + fromy);
-        char piece = board[fromx, fromy].pieceName;
+        char piece = otherBoard[fromx, fromy].pieceName;
         if (!onlyReturnAttacks) print("We found a " + piece + " at "+fromx+":"+fromy);
-        if (!onlyReturnAttacks) print("It beleives it is at "+board[fromx,fromy].x+":" + board[fromx, fromy].y);
+        if (!onlyReturnAttacks) print("It beleives it is at "+ otherBoard[fromx,fromy].x+":" + otherBoard[fromx, fromy].y);
         switch (piece)
         {
             // Pawn moves
             case 'p':
             case 'P':
-                return LegalMovesPawn(fromx, fromy,onlyReturnAttacks);
+                return LegalMovesPawn(fromx, fromy,onlyReturnAttacks,otherBoard);
             // Rook moves
             case 'R':
             case 'r':
-                return LegalMovesRook(fromx, fromy,onlyReturnAttacks);
+                return LegalMovesRook(fromx, fromy,onlyReturnAttacks,otherBoard);
             // Knight moves
             case 'N':
             case 'n':
-                return LegalMovesKnight(fromx, fromy,onlyReturnAttacks);
+                return LegalMovesKnight(fromx, fromy,onlyReturnAttacks,otherBoard);
             // Bishop moves
             case 'B':
             case 'b':
-                return LegalMovesBishop(fromx, fromy,onlyReturnAttacks);
+                return LegalMovesBishop(fromx, fromy,onlyReturnAttacks,otherBoard);
             // Queen moves
             case 'Q':
             case 'q':
-                return LegalMovesQueen(fromx, fromy,onlyReturnAttacks);
+                return LegalMovesQueen(fromx, fromy,onlyReturnAttacks,otherBoard);
             // King 
             case 'K':
             case 'k':
-                return LegalMovesKing(fromx, fromy,onlyReturnAttacks);
+                return LegalMovesKing(fromx, fromy,onlyReturnAttacks,otherBoard);
             default:
                 //Debug.LogError("Invalid piece moved! " + piece);
                 return new List<string>();
         }
     }
 
-    private bool IsSquareEmpty(int x, int y)
+    private bool IsSquareEmpty(int x, int y,Piece[,] otherBoard)
     {
-        return board[x, y] == null;
+        return otherBoard[x, y] == null;
     }
 
     // Does x,y contain a piece of opposite color?
-    private bool SquareHasAnEnemy(Piece attacker, int x, int y)
+    private bool SquareHasAnEnemy(Piece attacker, int x, int y,Piece[,] otherBoard)
     {
-        if (board[x, y] == null) return false;
+        if (otherBoard[x, y] == null) return false;
 
-        return (IsWhite(attacker) != IsWhite(board[x, y]));
+        return (IsWhite(attacker) != IsWhite(otherBoard[x, y]));
     }
 
     // Verifies if the desired move puts self into check. If so, it returns true, so that the move can be discarded as possible
-    private bool MovePutsSelfInCheck(int fromx, int fromy, int tox, int toy)
+    private bool MovePutsSelfInCheck(int fromx, int fromy, int tox, int toy,Piece[,]otherBoard)
     {        
         bool res = false;
-        Piece backupOfAttacker = board[fromx,fromy];
-        Piece backupOfDefender = board[tox,toy];
+        Piece backupOfAttacker = otherBoard[fromx,fromy];
+        Piece backupOfDefender = otherBoard[tox,toy];
 
         Debug.Assert(backupOfAttacker != null);
 
         if(!((backupOfDefender != null && IsWhite(backupOfDefender) != IsWhite(backupOfAttacker)) || backupOfDefender == null))
         {
-            Debug.Log("What!! We are trying to move from " + fromx + ":" + fromy + " with our " + board[fromx, fromy].pieceName + " onto " + tox + ":" + toy + " where there is a " + board[tox, toy].pieceName);
+            Debug.Log("What!! We are trying to move from " + fromx + ":" + fromy + " with our " + otherBoard[fromx, fromy].pieceName + " onto " + tox + ":" + toy + " where there is a " + otherBoard[tox, toy].pieceName);
             Debug.Break();
         }
         Debug.Assert((backupOfDefender != null && IsWhite(backupOfDefender) != IsWhite(backupOfAttacker)) || backupOfDefender == null); // Trying to move piece onto a friendly piece
-        Debug.Assert(board[fromx, fromy] != null);
+        Debug.Assert(otherBoard[fromx, fromy] != null);
 
         bool isWhite = IsWhite(backupOfAttacker);
 
         // Now, make the move, see what happens, and undo it again
-        board[fromx, fromy] = null;
-        board[tox, toy] = backupOfAttacker;
+        otherBoard[fromx, fromy] = null;
+        otherBoard[tox, toy] = backupOfAttacker;
 
         // Check for check
         // Doing this operation is heavy, so we only do it iff:
         // 1. An enemy attacks this piece, or the square we move to. In this case a check might be blocked
         // 2. There is an enemy on the square we are looking at. This might can kill knights checking the king
         if(enemyAttackedSquares.Item1.Contains((fromx,fromy))|| enemyAttackedSquares.Item1.Contains((tox, toy)) || backupOfAttacker != null)
-            enemyAttackedSquares = EnemyAttackedSquares(isWhite);
+            enemyAttackedSquares = EnemyAttackedSquares(isWhite, otherBoard);
         (int, int) kingCoords = enemyAttackedSquares.Item2;
 
         if(backupOfAttacker.pieceName == 'k' || backupOfAttacker.pieceName=='K')
@@ -233,8 +233,8 @@ public class RulesHandler : MonoBehaviour
         }
 
         // Restore the board
-        board[fromx, fromy] = backupOfAttacker;
-        board[tox, toy] = backupOfDefender;
+        otherBoard[fromx, fromy] = backupOfAttacker;
+        otherBoard[tox, toy] = backupOfDefender;
         
         return res;
     }
@@ -242,13 +242,13 @@ public class RulesHandler : MonoBehaviour
 
     // Below are all the functions that return all legal moves for any given piece on the board
     // Set the flag 'onlyReturnAttacked' to instead return all squares that piece is currently attacking. 
-    private List<string> LegalMovesPawn(int fromx, int fromy,bool onlyReturnAttacked)
+    private List<string> LegalMovesPawn(int fromx, int fromy,bool onlyReturnAttacked,Piece[,]otherBoard)
     {
         List<string> validSquares = new List<string>();
-        bool isWhite = IsWhite(board[fromx, fromy]);
+        bool isWhite = IsWhite(otherBoard[fromx, fromy]);
 
         int dir = 1;
-        if (!IsWhite(board[fromx, fromy])) dir = -1;
+        if (!IsWhite(otherBoard[fromx, fromy])) dir = -1;
 
         // A pawn can: 
         // 1. Move 1 step forward
@@ -263,74 +263,74 @@ public class RulesHandler : MonoBehaviour
         // This does NOT include promotion, that is handled further down
         if (fromy + dir <= 7 && fromy + dir >= 2)
         {
-            if(IsSquareEmpty(fromx, fromy + dir) && !onlyReturnAttacked)
+            if(IsSquareEmpty(fromx, fromy + dir, otherBoard) && !onlyReturnAttacked)
             {
-                AddMoveToList(fromx, fromy, fromx, fromy + dir, ref validSquares);
+                AddMoveToList(fromx, fromy, fromx, fromy + dir, ref validSquares,otherBoard);
             }
         }
 
         // 2.Move 2 steps forward, if it is on the base row
         if (isWhite && fromy == 2 || !isWhite && fromy == 7)
         {
-            if(IsSquareEmpty(fromx, fromy + dir) && IsSquareEmpty(fromx,fromy+dir*2) && !onlyReturnAttacked)
+            if(IsSquareEmpty(fromx, fromy + dir, otherBoard) && IsSquareEmpty(fromx,fromy+dir*2, otherBoard) && !onlyReturnAttacked)
             {
-                AddMoveToList(fromx, fromy, fromx, fromy + dir * 2, ref validSquares);
+                AddMoveToList(fromx, fromy, fromx, fromy + dir * 2, ref validSquares,otherBoard);
                 enPassantDir = dir;
             }
         }
 
         // 3. Capture
         // Capture left
-        if(IsSquareValid(fromx - 1, fromy + dir) && fromx > 1 && SquareHasAnEnemy(board[fromx,fromy],fromx-1,fromy+dir))
+        if(IsSquareValid(fromx - 1, fromy + dir) && fromx > 1 && SquareHasAnEnemy(otherBoard[fromx,fromy],fromx-1,fromy+dir, otherBoard))
         {
             if(fromy+dir == 8 || fromy + dir == 1)
             {
                 // Capture into promotion
-                if(!onlyReturnAttacked)HandlePromotion(fromx,fromx-1, fromy, dir, isWhite, onlyReturnAttacked, ref validSquares);
+                if(!onlyReturnAttacked)HandlePromotion(fromx,fromx-1, fromy, dir, isWhite, onlyReturnAttacked, ref validSquares,otherBoard);
                 else validSquares.Add(GetSquareNotationFromCoords(fromx - 1, fromy + dir));
 
             }
             else
             {
-                if (!onlyReturnAttacked) AddMoveToList(fromx, fromy, fromx - 1, fromy + dir, ref validSquares);
+                if (!onlyReturnAttacked) AddMoveToList(fromx, fromy, fromx - 1, fromy + dir, ref validSquares, otherBoard);
                 else validSquares.Add(GetSquareNotationFromCoords(fromx - 1, fromy + dir));
             }
 
         }
 
         // Capture right
-        if (IsSquareValid(fromx + 1, fromy + dir) && fromx < 8 && SquareHasAnEnemy(board[fromx, fromy], fromx + 1, fromy + dir))
+        if (IsSquareValid(fromx + 1, fromy + dir) && fromx < 8 && SquareHasAnEnemy(otherBoard[fromx, fromy], fromx + 1, fromy + dir, otherBoard))
         {
             if (fromy + dir == 8 || fromy + dir == 1)
             {
                 // Capture into promotion
-                if (!onlyReturnAttacked) HandlePromotion(fromx,fromx + 1, fromy, dir, isWhite, onlyReturnAttacked, ref validSquares);
+                if (!onlyReturnAttacked) HandlePromotion(fromx,fromx + 1, fromy, dir, isWhite, onlyReturnAttacked, ref validSquares, otherBoard);
                 else validSquares.Add(GetSquareNotationFromCoords(fromx + 1, fromy + dir));
             }
             else
             {
-                if (!onlyReturnAttacked) AddMoveToList(fromx, fromy, fromx + 1, fromy + dir, ref validSquares);
+                if (!onlyReturnAttacked) AddMoveToList(fromx, fromy, fromx + 1, fromy + dir, ref validSquares, otherBoard);
                 else validSquares.Add(GetSquareNotationFromCoords(fromx + 1, fromy + dir));
             }
         }
 
         // 4. En passant
         // En passant left. During en passant, the pawns are on the same y-level. Since it is left, the square x - ours should be = -1
-        if (fromx > 1 && SquareHasAnEnemy(board[fromx, fromy], fromx - 1, fromy))
+        if (fromx > 1 && SquareHasAnEnemy(otherBoard[fromx, fromy], fromx - 1, fromy, otherBoard))
         {
             if(enPassantSquare != "-" && GetCoordsFromSquareNotation(enPassantSquare).Item1-fromx == -1)
             {
-                if (!onlyReturnAttacked) AddMoveToList(fromx, fromy, fromx - 1, fromy + dir, ref validSquares);
+                if (!onlyReturnAttacked) AddMoveToList(fromx, fromy, fromx - 1, fromy + dir, ref validSquares,otherBoard);
                 else validSquares.Add(GetSquareNotationFromCoords(fromx - 1, fromy + dir));
             }
         }
 
         // En passant right
-        if (fromx < 8 && SquareHasAnEnemy(board[fromx, fromy], fromx + 1, fromy))
+        if (fromx < 8 && SquareHasAnEnemy(otherBoard[fromx, fromy], fromx + 1, fromy, otherBoard))
         {
             if (enPassantSquare != "-" && GetCoordsFromSquareNotation(enPassantSquare).Item1 - fromx == 1)
             {
-                if (!onlyReturnAttacked) AddMoveToList(fromx, fromy, fromx + 1, fromy + dir, ref validSquares);
+                if (!onlyReturnAttacked) AddMoveToList(fromx, fromy, fromx + 1, fromy + dir, ref validSquares,otherBoard);
                 else validSquares.Add(GetSquareNotationFromCoords(fromx + 1, fromy + dir));
             }
         }
@@ -338,8 +338,8 @@ public class RulesHandler : MonoBehaviour
         // 5. Promotion stepping forward
         if(isWhite && fromy+dir == 8 || !isWhite && fromy+dir == 1)
         {
-            if(IsSquareEmpty(fromx,fromy+dir))
-                HandlePromotion(fromx,fromx, fromy, dir,isWhite, onlyReturnAttacked, ref validSquares);
+            if(IsSquareEmpty(fromx,fromy+dir, otherBoard))
+                HandlePromotion(fromx,fromx, fromy, dir,isWhite, onlyReturnAttacked, ref validSquares, otherBoard);
         }
 
 
@@ -347,18 +347,18 @@ public class RulesHandler : MonoBehaviour
     }
 
     // This just removes the "not in check" criteria from the main code, for a bit of debloating
-    private void AddMoveToList(int fromx,int fromy, int tox, int toy, ref List<string> validSquares)
+    private void AddMoveToList(int fromx,int fromy, int tox, int toy, ref List<string> validSquares,Piece[,] otherBoard)
     {
         Debug.Assert(IsSquareValid(tox, toy));
-        if(!MovePutsSelfInCheck(fromx, fromy, tox,toy))
+        if(!MovePutsSelfInCheck(fromx, fromy, tox,toy, otherBoard))
         {
             validSquares.Add(GetSquareNotationFromCoords(tox, toy));
         }
     }
     
-    private void HandlePromotion(int fromx,int tox, int fromy,int dir ,bool isWhite,bool onlyReturnAttacked,ref List<string> validSquares)
+    private void HandlePromotion(int fromx,int tox, int fromy,int dir ,bool isWhite,bool onlyReturnAttacked,ref List<string> validSquares,Piece[,] otherBoard)
     {
-        if (!onlyReturnAttacked && !MovePutsSelfInCheck(fromx, fromy, tox, fromy + dir))
+        if (!onlyReturnAttacked && !MovePutsSelfInCheck(fromx, fromy, tox, fromy + dir, otherBoard))
         {
             char bishop = isWhite ? 'B' : 'b';
             char queen = isWhite ? 'Q' : 'q';
@@ -371,7 +371,7 @@ public class RulesHandler : MonoBehaviour
         }
     }
 
-    private List<string> LegalMovesRook(int fromx, int fromy, bool onlyReturnAttacked)
+    private List<string> LegalMovesRook(int fromx, int fromy, bool onlyReturnAttacked, Piece[,] otherBoard)
     {
         List<string> validMoves = new List<string>();
         // A rook can:
@@ -383,31 +383,31 @@ public class RulesHandler : MonoBehaviour
         // 1. Go right
         for(int i = fromx+1; i<=8;i++)
         {
-            if (!AddMoveInDirection(fromx, fromy, i, fromy, ref validMoves,onlyReturnAttacked)) break;           
+            if (!AddMoveInDirection(fromx, fromy, i, fromy, ref validMoves,onlyReturnAttacked, otherBoard)) break;           
         }
         // 2. Go left
         for (int i = fromx -1; i >= 1; i--)
         {
-            if (!AddMoveInDirection(fromx, fromy, i, fromy, ref validMoves, onlyReturnAttacked)) break;
+            if (!AddMoveInDirection(fromx, fromy, i, fromy, ref validMoves, onlyReturnAttacked,otherBoard)) break;
         }
         // 3. Go up
         for (int i = fromy +1; i <= 8; i++)
         {
-            if (!AddMoveInDirection(fromx, fromy, fromx, i, ref validMoves, onlyReturnAttacked)) break;
+            if (!AddMoveInDirection(fromx, fromy, fromx, i, ref validMoves, onlyReturnAttacked,otherBoard)) break;
         }
         // 4. Go down
         for (int i = fromy - 1; i >= 1; i--)
         {
-            if (!AddMoveInDirection(fromx, fromy, fromx, i, ref validMoves, onlyReturnAttacked)) break;
+            if (!AddMoveInDirection(fromx, fromy, fromx, i, ref validMoves, onlyReturnAttacked,otherBoard)) break;
         }
 
         return validMoves;
     }
 
-    private List<string> LegalMovesBishop(int fromx, int fromy, bool onlyReturnAttacked)
+    private List<string> LegalMovesBishop(int fromx, int fromy, bool onlyReturnAttacked,Piece[,] otherBoard)
     {
         List<string> validMoves = new List<string> ();
-        Piece attacker = board[fromx, fromy];
+        Piece attacker = otherBoard[fromx, fromy];
 
         // A bishop can 
         // 1. Move up to seven steps up + right
@@ -422,7 +422,7 @@ public class RulesHandler : MonoBehaviour
             if (fromy + j > 8) break;
             // We can re-use the rook code! They are functionally the same, yay!
             // Why is this? Well, it moves in a certain direction until it a: hits a wall, b: hits an enemy, or c: hits a friendly piece
-            if (!AddMoveInDirection(fromx, fromy, i, fromy + j, ref validMoves, onlyReturnAttacked)) break;
+            if (!AddMoveInDirection(fromx, fromy, i, fromy + j, ref validMoves, onlyReturnAttacked, otherBoard)) break;
             j++;
         }
 
@@ -431,7 +431,7 @@ public class RulesHandler : MonoBehaviour
         for (int i = fromx - 1; i >= 1; i--)
         {
             if (fromy + j > 8) break;
-            if (!AddMoveInDirection(fromx, fromy, i, fromy + j, ref validMoves, onlyReturnAttacked)) break;
+            if (!AddMoveInDirection(fromx, fromy, i, fromy + j, ref validMoves, onlyReturnAttacked,otherBoard)) break;
             j++;
         }
 
@@ -440,7 +440,7 @@ public class RulesHandler : MonoBehaviour
         for (int i = fromx + 1; i <= 8; i++)
         {
             if (fromy + j < 1) break;
-            if (!AddMoveInDirection(fromx, fromy, i, fromy + j, ref validMoves, onlyReturnAttacked)) break;
+            if (!AddMoveInDirection(fromx, fromy, i, fromy + j, ref validMoves, onlyReturnAttacked,otherBoard)) break;
             j--;
         }
 
@@ -449,45 +449,45 @@ public class RulesHandler : MonoBehaviour
         for (int i = fromx - 1; i >= 1; i--)
         {
             if (fromy + j < 1) break;
-            if (!AddMoveInDirection(fromx, fromy, i, fromy + j, ref validMoves, onlyReturnAttacked)) break;
+            if (!AddMoveInDirection(fromx, fromy, i, fromy + j, ref validMoves, onlyReturnAttacked,otherBoard)) break;
             j--;
         }
         return validMoves;
     }
 
-    private List<string> LegalMovesQueen(int fromx, int fromy, bool onlyReturnAttacked)
+    private List<string> LegalMovesQueen(int fromx, int fromy, bool onlyReturnAttacked,Piece[,] otherBoard)
     {
         // The queen is so simple. Just move like a rook and like a bishop :)
         List<string> validMoves = new List<string>();
-        foreach(string move in LegalMovesBishop(fromx,fromy, onlyReturnAttacked))
+        foreach(string move in LegalMovesBishop(fromx,fromy, onlyReturnAttacked, otherBoard))
         {
             validMoves.Add(move);
         }
-        foreach (string move in LegalMovesRook(fromx, fromy, onlyReturnAttacked))
+        foreach (string move in LegalMovesRook(fromx, fromy, onlyReturnAttacked, otherBoard))
         {
             validMoves.Add(move);
         }
         return validMoves;
     }
 
-    private List<string> LegalMovesKnight(int fromx, int fromy, bool onlyReturnAttacked)
+    private List<string> LegalMovesKnight(int fromx, int fromy, bool onlyReturnAttacked,Piece[,] otherBoard)
     {
         List<string> validMoves = new List<string>();
-        Piece attacker = board[fromx, fromy];
+        Piece attacker = otherBoard[fromx, fromy];
         print("Horse name is "+attacker.pieceName);
-        AddValidMove(1, 2, attacker, ref validMoves, onlyReturnAttacked);
-        AddValidMove(1, -2, attacker, ref validMoves,onlyReturnAttacked);
-        AddValidMove(-1, 2, attacker, ref validMoves, onlyReturnAttacked);
-        AddValidMove(-1, -2, attacker, ref validMoves, onlyReturnAttacked);
-        AddValidMove(2, 1, attacker, ref validMoves,onlyReturnAttacked);
-        AddValidMove(2, -1, attacker, ref validMoves,onlyReturnAttacked);
-        AddValidMove(-2, 1, attacker, ref validMoves,onlyReturnAttacked);
-        AddValidMove(-2, -1, attacker, ref validMoves, onlyReturnAttacked);
+        AddValidMove(1, 2, attacker, ref validMoves, onlyReturnAttacked, otherBoard);
+        AddValidMove(1, -2, attacker, ref validMoves,onlyReturnAttacked,otherBoard);
+        AddValidMove(-1, 2, attacker, ref validMoves, onlyReturnAttacked,otherBoard);
+        AddValidMove(-1, -2, attacker, ref validMoves, onlyReturnAttacked,otherBoard);
+        AddValidMove(2, 1, attacker, ref validMoves,onlyReturnAttacked,otherBoard);
+        AddValidMove(2, -1, attacker, ref validMoves,onlyReturnAttacked,otherBoard);
+        AddValidMove(-2, 1, attacker, ref validMoves,onlyReturnAttacked,otherBoard);
+        AddValidMove(-2, -1, attacker, ref validMoves, onlyReturnAttacked,otherBoard);
 
         return validMoves;
     }
 
-    private List<string> LegalMovesKing(int fromx, int fromy, bool onlyReturnAttacked)
+    private List<string> LegalMovesKing(int fromx, int fromy, bool onlyReturnAttacked,Piece[,] otherBoard)
     {
         List<string> validMoves = new List<string>();
 
@@ -498,7 +498,7 @@ public class RulesHandler : MonoBehaviour
         // 1. Move in any direction
         if(!onlyReturnAttacked)
         {
-            enemyAttackedSquares = EnemyAttackedSquares(IsWhite(board[fromx, fromy]));
+            enemyAttackedSquares = EnemyAttackedSquares(IsWhite(otherBoard[fromx, fromy]), otherBoard);
         }
 
         for (int i = -1; i <= 1; i++)
@@ -512,7 +512,7 @@ public class RulesHandler : MonoBehaviour
                 {
                     continue; // Do not capture something that is defended
                 }
-                AddValidMove(i, j, board[fromx, fromy], ref validMoves, onlyReturnAttacked);
+                AddValidMove(i, j, board[fromx, fromy], ref validMoves, onlyReturnAttacked, otherBoard);
 
             }
         }
@@ -533,7 +533,7 @@ public class RulesHandler : MonoBehaviour
 
         int ylevel = isWhite ? 1 : 8;
 
-        (List<(int, int)> enemySquares, (int, int) kingPos) = EnemyAttackedSquares(isWhite);
+        (List<(int, int)> enemySquares, (int, int) kingPos) = EnemyAttackedSquares(isWhite, otherBoard);
 
         if (enemySquares.Contains(kingPos)) return validMoves; // You can not castle out of check, for some reason
 
@@ -541,14 +541,14 @@ public class RulesHandler : MonoBehaviour
 
         if(shortCastle)
         { 
-            if(RowIsEmptyAndNotAttacked(6,7,ylevel, enemySquares))
+            if(RowIsEmptyAndNotAttacked(6,7,ylevel, enemySquares, otherBoard))
             {
                 validMoves.Add(GetSquareNotationFromCoords(7,ylevel));
             }
         }
         if (longCastle)
         {
-            if (RowIsEmptyAndNotAttacked(3,4,ylevel, enemySquares))
+            if (RowIsEmptyAndNotAttacked(3,4,ylevel, enemySquares, otherBoard))
             {
                 validMoves.Add(GetSquareNotationFromCoords(3, ylevel));
             }
@@ -558,48 +558,48 @@ public class RulesHandler : MonoBehaviour
         return validMoves;
     }
 
-    private bool RowIsEmptyAndNotAttacked(int fromx, int tox, int y, List<(int, int)> enemyAttackedSquares)
+    private bool RowIsEmptyAndNotAttacked(int fromx, int tox, int y, List<(int, int)> enemyAttackedSquares,Piece[,] otherBoard)
     {
         for(int i = fromx; i<=tox;i++)
         {
-            if (!SquareIsEmptyAndNotAttacked(i, y, enemyAttackedSquares)) return false;
+            if (!SquareIsEmptyAndNotAttacked(i, y, enemyAttackedSquares, otherBoard)) return false;
         }
         return true;
     }
 
-    private bool SquareIsEmptyAndNotAttacked(int x, int y, List<(int,int)> enemyAttackedSquares)
+    private bool SquareIsEmptyAndNotAttacked(int x, int y, List<(int,int)> enemyAttackedSquares,Piece[,] otherBoard)
     {
-        return IsSquareEmpty(x, y) && !enemyAttackedSquares.Contains((x, y));
+        return IsSquareEmpty(x, y, otherBoard) && !enemyAttackedSquares.Contains((x, y));
     }
 
     // Adds a move to the list, if the given move is valid
-    private void AddValidMove(int xOffset, int yOffset,Piece attacker, ref List<string> validMoves,bool onlyReturnAttacked)
+    private void AddValidMove(int xOffset, int yOffset,Piece attacker, ref List<string> validMoves,bool onlyReturnAttacked,Piece[,] otherBoard)
     {
         // AttackableSquare also check for check, heh. A check-check
-        if (AttackableSquare(attacker, attacker.x + xOffset, attacker.y + yOffset, onlyReturnAttacked))
+        if (AttackableSquare(attacker, attacker.x + xOffset, attacker.y + yOffset, onlyReturnAttacked, otherBoard))
         {
             validMoves.Add(GetSquareNotationFromCoords(attacker.x + xOffset, attacker.y + yOffset));
         }
     }
 
     // Adds a move to the rook in one direction, returns false once an obstacle is encountered
-    private bool AddMoveInDirection(int fromx, int fromy, int xIter, int yIter ,ref List<string> validMoves, bool onlyReturnAttacked)
+    private bool AddMoveInDirection(int fromx, int fromy, int xIter, int yIter ,ref List<string> validMoves, bool onlyReturnAttacked, Piece[,]otherBoard)
     {
         // Conditions: There is an enemy. If we are looking for moves, it must not put us into check. If we are checking attacks, ignore that condition.
-        if (SquareHasAnEnemy(board[fromx, fromy], xIter, yIter))
+        if (SquareHasAnEnemy(otherBoard[fromx, fromy], xIter, yIter, otherBoard))
         {
             // There is an enemy. We can capture it, but can go no further
-            if(onlyReturnAttacked || !MovePutsSelfInCheck(fromx, fromy, xIter, yIter))
+            if(onlyReturnAttacked || !MovePutsSelfInCheck(fromx, fromy, xIter, yIter, otherBoard))
                 validMoves.Add(GetSquareNotationFromCoords(xIter, yIter));
             return false;
         }
-        else if (board[xIter, yIter] == null && (onlyReturnAttacked || !MovePutsSelfInCheck(fromx, fromy, xIter, yIter)))
+        else if (otherBoard[xIter, yIter] == null && (onlyReturnAttacked || !MovePutsSelfInCheck(fromx, fromy, xIter, yIter, otherBoard)))
         {
             // Nothing there
             validMoves.Add(GetSquareNotationFromCoords(xIter, yIter));
             return true;
         }
-        else if(board[xIter,yIter] != null)
+        else if(otherBoard[xIter,yIter] != null)
         {
             // There is a friendly piece there. Don't kill it
             // However! We are DEFENDING that piece, so a king must not capture it!
@@ -618,17 +618,17 @@ public class RulesHandler : MonoBehaviour
         }
     }
 
-    private bool AttackableSquare(Piece attacker, int x, int y, bool onlyReturnAttacked)
+    private bool AttackableSquare(Piece attacker, int x, int y, bool onlyReturnAttacked,Piece[,] otherBoard)
     {
         // The square must be within bounds. 
         if (!IsSquareValid(x, y)) return false;
 
         // It can be empty, or have an enemy
-        bool emptyOrEnemy = (IsSquareEmpty(x, y) || SquareHasAnEnemy(attacker, x, y));
+        bool emptyOrEnemy = (IsSquareEmpty(x, y, otherBoard) || SquareHasAnEnemy(attacker, x, y, otherBoard));
         if (onlyReturnAttacked && emptyOrEnemy) return true;
 
         // And it must not put you into check
-        return emptyOrEnemy && !MovePutsSelfInCheck(attacker.x, attacker.y, x, y);
+        return emptyOrEnemy && !MovePutsSelfInCheck(attacker.x, attacker.y, x, y, otherBoard);
     }
 
     private bool IsSquareValid(int x, int y)
@@ -665,17 +665,17 @@ public class RulesHandler : MonoBehaviour
     // This also returns the kings position, so we dont have to loop through the entire board again later
     // Since this only care about squares CURRENTLY attacked by the static enemy pieces, we do not need to worry about enemy promotion 
     // and thus we can use simple int coords
-    public (List<(int, int)>,(int,int)) EnemyAttackedSquares(bool isWhite)
+    public (List<(int, int)>,(int,int)) EnemyAttackedSquares(bool isWhite,Piece[,] otherBoard)
     {
         List<(int, int)> attackedSquares = new List<(int, int)>();
         (int, int) friendlyKingCoords = (0, 0);
         foreach (Piece p in board)
         {
             if (p == null) continue;
-            if (board[p.x, p.y] == null) continue;
+            if (otherBoard[p.x, p.y] == null) continue;
             if (IsWhite(p) != isWhite)
             {
-                List<string> attacked = GetMovesOrAttacks(p.x, p.y, true);
+                List<string> attacked = GetMovesOrAttacks(p.x, p.y, true, otherBoard);
                 if (gameOver) return (new List<(int,int)>(),(-1,-1));
                 foreach(string squareNotation in attacked)
                 {
@@ -697,20 +697,20 @@ public class RulesHandler : MonoBehaviour
     // this format is easy to use in arrays, and allows to differentiate promotion moves
     // example 1: 5,7,e8=Q
     // example 2: 4,3,e5
-    public List<(int, int, string)> GetAllValidMoves(char color)
+    public List<(int, int, string)> GetAllValidMoves(char color,Piece[,] otherBoard)
     {
         bool isWhite = IsWhite(color);
         List<(int,int,string)> attackedSquares = new List<(int, int,string)>();
 
         if (gameOver) return attackedSquares; 
 
-        foreach (Piece p in board)
+        foreach (Piece p in otherBoard)
         {
             if (p == null) continue;
-            if (board[p.x, p.y] == null) continue;
+            if (otherBoard[p.x, p.y] == null) continue;
             if (IsWhite(p) == isWhite)
             {
-                List<string> attacked = GetMovesOrAttacks(p.x, p.y, false);
+                List<string> attacked = GetMovesOrAttacks(p.x, p.y, false,otherBoard);
                 foreach (string square in attacked)
                 {
                     attackedSquares.Add((p.x,p.y,square));
@@ -854,7 +854,7 @@ public class RulesHandler : MonoBehaviour
                 gameResult = 'd';
             }
         }
-        enemyAttackedSquares = EnemyAttackedSquares(IsWhite(pieceType)); // Call this only once per turn, it is quite heavy-weight
+        enemyAttackedSquares = EnemyAttackedSquares(IsWhite(pieceType),board); // Call this only once per turn, it is quite heavy-weight
         //print("Enemy attacks " + enemyAttackedSquares.Item1.Count + " squares");
         TogglePlayer();
 
@@ -1006,7 +1006,7 @@ public class RulesHandler : MonoBehaviour
         threeFoldRepetition = false;
         gameResult = '-';
         gamePositionsFEN.Add(currentFEN);
-        enemyAttackedSquares = EnemyAttackedSquares(IsWhite(activePlayer));
+        enemyAttackedSquares = EnemyAttackedSquares(IsWhite(activePlayer), board);
     }
 
 
