@@ -84,8 +84,6 @@ public class BoardHandler : MonoBehaviour
 
     private bool displayedTournamentResults;
 
-    private bool checkForGameoverThisTurn;
-
     private (int, int, string) nextMove;
 
     [SerializeField]
@@ -113,7 +111,6 @@ public class BoardHandler : MonoBehaviour
 
         displayedGameResult = false;
         displayedTournamentResults = false;
-        checkForGameoverThisTurn = false;
 
         board = new PieceHandler[9, 9]; // Sorry, but when talking about rows 1-8, worrying about 0-indexing just causes confusion later down the line
 
@@ -131,7 +128,6 @@ public class BoardHandler : MonoBehaviour
              return;
          }
          
-         checkForGameoverThisTurn = false;
         if (enableEngines)
         {
             if (activeColor == engine1Color) // just for debug
@@ -187,7 +183,6 @@ public class BoardHandler : MonoBehaviour
     // Move the piece and handle promotion
     public bool MovePiece(int fromx, int fromy, string move)
     {
-        checkForGameoverThisTurn = false;
         // Here we do not validate if this is a valid move! That is done when deciding to move the piece
         (int, int) newCoords = GetCoordsFromSquareNotation(move);
         bool capture = false;
@@ -340,7 +335,7 @@ public class BoardHandler : MonoBehaviour
                 RemoveHighlights();
                 ClearBoard();
                 PlaceFENNotation(StartingFEN);
-                rulesHandler.Reset();
+                rulesHandler.ResetVariables();
             }
             else
             {
@@ -378,7 +373,21 @@ public class BoardHandler : MonoBehaviour
         pieceNamePrefabConvertion.Add('r', blackRookPrefab);
     }
 
-    public PieceHandler[,] GetBoard()
+    public Piece[,] GetBoard()
+    {
+        Piece[,] pieceBoard = new Piece[9, 9];
+        for(int i = 1;i<=8;i++)
+        {
+            for(int j = 1; j<=8;j++)
+            {
+                if(board[i,j] != null)
+                    pieceBoard[i, j] = board[i, j].p;
+            }
+        }
+        return pieceBoard;
+    }
+
+    public PieceHandler[,] GetPHBoard()
     {
         return board;
     }

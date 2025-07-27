@@ -10,15 +10,15 @@ public class RulesHandler : MonoBehaviour
     public GameObject boardObject;
     public GameObject dummyPrefab;
     BoardHandler boardHandler;
-    PieceHandler[,] board;
+    Piece[,] board;
     private string enPassantSquare;
     private int enPassantDir;
 
-    private PieceHandler whiteKing;
-    private PieceHandler blackKing;
+    private Piece whiteKing;
+    private Piece blackKing;
 
-    private List<PieceHandler> whitePieces;
-    private List<PieceHandler> blackPieces;
+    private List<Piece> whitePieces;
+    private List<Piece> blackPieces;
 
     private short halfMoveClock;
     private short fullMoveCounter;
@@ -46,8 +46,8 @@ public class RulesHandler : MonoBehaviour
     {
         // Load objects and variables
         boardHandler = boardObject.GetComponent<BoardHandler>();
-        whitePieces = new List<PieceHandler>();
-        blackPieces = new List<PieceHandler>();
+        whitePieces = new List<Piece>();
+        blackPieces = new List<Piece>();
         positionRepetitionCount = new Dictionary<string, int>();
         gamePositionsFEN = new List<string>();
 
@@ -66,7 +66,6 @@ public class RulesHandler : MonoBehaviour
     public bool IsMoveLegal(int fromx, int fromy, string move)
     {
         // Call the corresponding movement function
-
         // Making a non-move is not legal
         string from = GetSquareNotationFromCoords(fromx, fromy);
         if (from==move) return false;
@@ -134,8 +133,11 @@ public class RulesHandler : MonoBehaviour
             print("Its a draw!");
             return new List<string>();
         }
-        //print("Looking for a piece at " + fromx + " " + fromy + " and only attacks is "+onlyReturnAttacks);
+        //if(!onlyReturnAttacks)print("Looking for a piece at " + fromx + " " + fromy + " and only attacks is "+onlyReturnAttacks);
+        //print("Gettin ready to check " + fromx + ":" + fromy);
         char piece = board[fromx, fromy].pieceName;
+        if (!onlyReturnAttacks) print("We found a " + piece + " at "+fromx+":"+fromy);
+        if (!onlyReturnAttacks) print("It beleives it is at "+board[fromx,fromy].x+":" + board[fromx, fromy].y);
         switch (piece)
         {
             // Pawn moves
@@ -174,7 +176,7 @@ public class RulesHandler : MonoBehaviour
     }
 
     // Does x,y contain a piece of opposite color?
-    private bool SquareHasAnEnemy(PieceHandler attacker, int x, int y)
+    private bool SquareHasAnEnemy(Piece attacker, int x, int y)
     {
         if (board[x, y] == null) return false;
 
@@ -183,17 +185,12 @@ public class RulesHandler : MonoBehaviour
 
     // Verifies if the desired move puts self into check. If so, it returns true, so that the move can be discarded as possible
     private bool MovePutsSelfInCheck(int fromx, int fromy, int tox, int toy)
-    {
+    {        
         bool res = false;
-        // Since PieceHandler is Monobehaviour we can not just create a 'PieceHandler tmp', we unfortunately need to instantiate a whole new prefab, and then use that PieceHandler
-        GameObject backupOfAttackerObj = Instantiate(dummyPrefab);
-        GameObject backupOfDefenderObj = Instantiate(dummyPrefab);
+        Piece backupOfAttacker = board[fromx,fromy];
+        Piece backupOfDefender = board[tox,toy];
 
-        PieceHandler backupOfAttacker = backupOfAttackerObj.GetComponent<PieceHandler>();
-        PieceHandler backupOfDefender = backupOfDefenderObj.GetComponent<PieceHandler>();
-
-        backupOfAttacker = board[fromx, fromy];
-        backupOfDefender = board[tox, toy]; // This may very well be null
+        Debug.Assert(backupOfAttacker != null);
 
         if(!((backupOfDefender != null && IsWhite(backupOfDefender) != IsWhite(backupOfAttacker)) || backupOfDefender == null))
         {
@@ -201,11 +198,11 @@ public class RulesHandler : MonoBehaviour
             Debug.Break();
         }
         Debug.Assert((backupOfDefender != null && IsWhite(backupOfDefender) != IsWhite(backupOfAttacker)) || backupOfDefender == null); // Trying to move piece onto a friendly piece
+        Debug.Assert(board[fromx, fromy] != null);
 
-        bool isWhite = IsWhite(board[fromx, fromy]);
+        bool isWhite = IsWhite(backupOfAttacker);
 
         // Now, make the move, see what happens, and undo it again
-        Debug.Assert(backupOfAttacker != null);
         board[fromx, fromy] = null;
         board[tox, toy] = backupOfAttacker;
 
@@ -238,11 +235,6 @@ public class RulesHandler : MonoBehaviour
         // Restore the board
         board[fromx, fromy] = backupOfAttacker;
         board[tox, toy] = backupOfDefender;
-
-        // Clean up garbage
-        Destroy(backupOfAttackerObj);
-        Destroy(backupOfDefenderObj);
-
         
         return res;
     }
@@ -415,7 +407,7 @@ public class RulesHandler : MonoBehaviour
     private List<string> LegalMovesBishop(int fromx, int fromy, bool onlyReturnAttacked)
     {
         List<string> validMoves = new List<string> ();
-        PieceHandler attacker = board[fromx, fromy];
+        Piece attacker = board[fromx, fromy];
 
         // A bishop can 
         // 1. Move up to seven steps up + right
@@ -481,8 +473,8 @@ public class RulesHandler : MonoBehaviour
     private List<string> LegalMovesKnight(int fromx, int fromy, bool onlyReturnAttacked)
     {
         List<string> validMoves = new List<string>();
-        PieceHandler attacker = board[fromx, fromy];
-
+        Piece attacker = board[fromx, fromy];
+        print("Horse name is "+attacker.pieceName);
         AddValidMove(1, 2, attacker, ref validMoves, onlyReturnAttacked);
         AddValidMove(1, -2, attacker, ref validMoves,onlyReturnAttacked);
         AddValidMove(-1, 2, attacker, ref validMoves, onlyReturnAttacked);
@@ -581,7 +573,7 @@ public class RulesHandler : MonoBehaviour
     }
 
     // Adds a move to the list, if the given move is valid
-    private void AddValidMove(int xOffset, int yOffset,PieceHandler attacker, ref List<string> validMoves,bool onlyReturnAttacked)
+    private void AddValidMove(int xOffset, int yOffset,Piece attacker, ref List<string> validMoves,bool onlyReturnAttacked)
     {
         // AttackableSquare also check for check, heh. A check-check
         if (AttackableSquare(attacker, attacker.x + xOffset, attacker.y + yOffset, onlyReturnAttacked))
@@ -626,7 +618,7 @@ public class RulesHandler : MonoBehaviour
         }
     }
 
-    private bool AttackableSquare(PieceHandler attacker, int x, int y, bool onlyReturnAttacked)
+    private bool AttackableSquare(Piece attacker, int x, int y, bool onlyReturnAttacked)
     {
         // The square must be within bounds. 
         if (!IsSquareValid(x, y)) return false;
@@ -644,7 +636,7 @@ public class RulesHandler : MonoBehaviour
         return x <= 8 && x >= 1 && y <= 8 && y >= 1;
     }
 
-    public bool IsWhite(PieceHandler p)
+    public bool IsWhite(Piece p)
     {
         if (p.pieceName == 'w') return true;
         if (p.pieceName < 97) return true;
@@ -677,9 +669,10 @@ public class RulesHandler : MonoBehaviour
     {
         List<(int, int)> attackedSquares = new List<(int, int)>();
         (int, int) friendlyKingCoords = (0, 0);
-        foreach (PieceHandler p in board)
+        foreach (Piece p in board)
         {
             if (p == null) continue;
+            if (board[p.x, p.y] == null) continue;
             if (IsWhite(p) != isWhite)
             {
                 List<string> attacked = GetMovesOrAttacks(p.x, p.y, true);
@@ -711,9 +704,10 @@ public class RulesHandler : MonoBehaviour
 
         if (gameOver) return attackedSquares; 
 
-        foreach (PieceHandler p in board)
+        foreach (Piece p in board)
         {
             if (p == null) continue;
+            if (board[p.x, p.y] == null) continue;
             if (IsWhite(p) == isWhite)
             {
                 List<string> attacked = GetMovesOrAttacks(p.x, p.y, false);
@@ -750,6 +744,15 @@ public class RulesHandler : MonoBehaviour
     // Also handles castling
     public void MakeMove(int fromx, int fromy, char pieceType, bool capture, int tox,int toy)
     {
+        board[fromx, fromy].x = tox;
+        board[fromx, fromy].y = toy;
+        if (board[fromx, fromy] == null) print("Nothing there");
+        else print(board[fromx, fromy].pieceName + " is at " + fromx + ":" + fromy);
+        board = boardHandler.GetBoard();
+        if (board[fromx, fromy] == null) print("Nothing there");
+        else print(board[fromx, fromy].pieceName + " is at " + fromx + ":" + fromy);
+        print("At the destination there is a " + board[tox, toy].pieceName);
+
 
         fullMoveCounter += 1;        
         if (pieceType == 'p' || pieceType == 'P' || capture)
@@ -782,22 +785,17 @@ public class RulesHandler : MonoBehaviour
                 if(tox == 7)
                 {
                     // Short castle
-                    board[8, ylevel].x = 6;
-                    board[8, ylevel].transform.position = new Vector2(6,ylevel);
                     string move = GetSquareNotationFromCoords(6, ylevel);
-                    boardHandler.MovePiece(8, ylevel, move);
-                    MakeMove(8, ylevel, rookChar, false, 6,ylevel);
+                    board[8, ylevel].pieceObject.GetComponent<PieceHandler>().MoveNoVerification(move);
                     return;
                 }
 
                 if (tox == 3)
                 {
                     // Long castle
-                    board[1, ylevel].x = 4;
-                    board[1, ylevel].transform.position = new Vector2(4, ylevel);
                     string move = GetSquareNotationFromCoords(4, ylevel);
-                    boardHandler.MovePiece(1, ylevel, move);
-                    MakeMove(1, ylevel, rookChar, false, 4,ylevel);
+
+                    board[1, ylevel].pieceObject.GetComponent<PieceHandler>().MoveNoVerification(move);
                     return;
                 }
                 fullMoveCounter -= 1; // A castle is not 2 moves!
@@ -995,10 +993,10 @@ public class RulesHandler : MonoBehaviour
         return square.ToString() + number.ToString();
     }
 
-    public void Reset()
+    public void ResetVariables()
     {
-        whitePieces = new List<PieceHandler>();
-        blackPieces = new List<PieceHandler>();
+        whitePieces = new List<Piece>();
+        blackPieces = new List<Piece>();
         positionRepetitionCount = new Dictionary<string, int>();
         gamePositionsFEN = new List<string>();
         board = boardHandler.GetBoard();
@@ -1010,5 +1008,6 @@ public class RulesHandler : MonoBehaviour
         gamePositionsFEN.Add(currentFEN);
         enemyAttackedSquares = EnemyAttackedSquares(IsWhite(activePlayer));
     }
+
 
 }

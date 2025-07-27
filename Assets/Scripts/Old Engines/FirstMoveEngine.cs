@@ -6,7 +6,7 @@ public class FirstMoveEngine : MonoBehaviour
 {
     public GameObject boardHandlerObject;
     public GameObject rulesHandlerObject;
-    PieceHandler[,] board;
+    Piece[,] board;
     BoardHandler boardHandler;
     RulesHandler rulesHandler;
     public char activePlayer;
@@ -29,7 +29,6 @@ public class FirstMoveEngine : MonoBehaviour
     public (int, int, string) GetNextMove()
     {
         List<(int, int, string)> legalMoves = new List<(int, int, string)>();
-        float timeLimit = 1f; // needs to be implemented
         activePlayer = rulesHandler.GetActivePlayer();
         if (activePlayer == enginePlayer)
             legalMoves = rulesHandler.GetAllValidMoves(enginePlayer);
@@ -45,5 +44,5 @@ public class FirstMoveEngine : MonoBehaviour
         //print("Returning " + legalMoves[0]);
         return legalMoves[0];
     }
-    public void SetBoard(PieceHandler[,] newBoard) { board = newBoard; }
+    public void SetBoard(Piece[,] newBoard) { board = newBoard; }
 }

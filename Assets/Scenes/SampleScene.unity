@@ -191,6 +191,7 @@ MonoBehaviour:
   activePieceReachableSquares: []
   didEnPassant: 0
   StartingFEN: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+  FEN: 
   activeColor: 119
   castlingRights: 
   enPassantSquare: 

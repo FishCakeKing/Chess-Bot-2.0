@@ -8,10 +8,11 @@ public class Engine : MonoBehaviour
 
     // Result vs random moves engine: 51 draws
     // After choosing random move and beeing greedy: 5 wins 46 draws
+    // After fixing promotion logic: 8 wins 43 draws
 
     public GameObject boardHandlerObject;
     public GameObject rulesHandlerObject;
-    char[,] board;
+    Piece[,] board;
     BoardHandler boardHandler;
     RulesHandler rulesHandler;
     public char activePlayer;
@@ -21,9 +22,8 @@ public class Engine : MonoBehaviour
 
     void Start()
     {
-        board = new char[9, 9];
         boardHandler = boardHandlerObject.GetComponent<BoardHandler>();
-        SetBoard(boardHandler.GetBoard());
+        board = boardHandler.GetBoard();
         rulesHandler = rulesHandlerObject.GetComponent<RulesHandler>();
         activePlayer = rulesHandler.GetActivePlayer();
         isWhite = rulesHandler.IsWhite(enginePlayer);
@@ -39,6 +39,7 @@ public class Engine : MonoBehaviour
     // int fromx, int fromy, string move
     public (int,int,string) GetNextMove()
     {
+        board = boardHandler.GetBoard();
         List<(int, int, string)> legalMoves = new List<(int, int,string)>();
         float timeLimit = 1f; // needs to be implemented
         activePlayer = rulesHandler.GetActivePlayer();
@@ -58,7 +59,7 @@ public class Engine : MonoBehaviour
         // Time to think
         (int, int, string) bestMove = GetRandomMove(legalMoves);
         float bestMoveScore = EvaluateMove(bestMove);
-
+        print("# of moves" + legalMoves.Count);
         foreach(var move in legalMoves)
         {
             float moveScore = EvaluateMove(move);
@@ -70,26 +71,27 @@ public class Engine : MonoBehaviour
                 bestMove = move;
             }
         }
-
+        print("Best move is " + bestMove + " with score " + bestMoveScore);
         return bestMove;
     }
 
-    private float EvaluateBoard(char[,] testBoard)
+    private float EvaluateBoard(Piece[,] testBoard)
     {
         float evaluation = 0.0f;
         float enemypoints = 0;
         float friendlypoints = 0;
 
         // Add up the values of all pieces
-        foreach(char p in testBoard)
+        foreach(Piece p in testBoard)
         {
-            if (p == '-') continue;
+            if (p == null) continue;
+            if (p.pieceName == '-') print(" WHAT!===========");
             if(IsWhite(p) == IsWhite(enginePlayer))
             {
-                friendlypoints += pieceValues[p];
+                friendlypoints += pieceValues[p.pieceName];
             }else
             {
-                enemypoints += pieceValues[p];
+                enemypoints += pieceValues[p.pieceName];
             }
         }
 
@@ -100,7 +102,7 @@ public class Engine : MonoBehaviour
 
     public float EvaluateMove((int,int,string) move)
     {
-        char[,] testBoard = new char[9,9];
+        Piece[,] testBoard = new Piece[9,9];
         for (int i = 1; i <= 8; i++)
         {
             for (int j = 1; j <= 8; j++)
@@ -119,13 +121,29 @@ public class Engine : MonoBehaviour
         if (name < 97) return true;
         return false;
     }
+    public bool IsWhite(Piece p)
+    {
+        var name = p.pieceName;
+        if (name == 'w') return true;
+        if (name < 97) return true;
+        return false;
+    }
 
-    private char[,] MakeMove((int,int,string) move,char[,] testBoard)
+    private Piece[,] MakeMove((int,int,string) move,Piece[,] testBoard)
     {
         var tmp = testBoard[move.Item1, move.Item2];
-        testBoard[move.Item1, move.Item2] = '-';
+        testBoard[move.Item1, move.Item2] = null;
         (int, int) newCoords = GetCoordsFromSquareNotation(move.Item3);
-        testBoard[newCoords.Item1, newCoords.Item2] = tmp;
+
+        if(move.Item3.Length == 2)
+        {
+            testBoard[newCoords.Item1, newCoords.Item2] = tmp;
+        }
+        else
+        {
+            // Promotion move
+            testBoard[newCoords.Item1, newCoords.Item2] = new Piece(move.Item1, move.Item2, move.Item3[3]);
+        }
 
         return testBoard;
     }
@@ -137,9 +155,9 @@ public class Engine : MonoBehaviour
             for (int j = 1; j <= 8; j++)
             {
                 if (newBoard[i, j] != null)
-                    board[i, j] = newBoard[i, j].pieceName;
+                    board[i, j] = new Piece(i, j,newBoard[i,j].pieceName);
                 else
-                    board[i, j] = '-';
+                    board[i, j] = null;
             }
         }
     }

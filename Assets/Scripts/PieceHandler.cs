@@ -20,6 +20,8 @@ public class PieceHandler : MonoBehaviour
     public int x, y;
     public char pieceName; // Q = white queen, q = black queen etc
 
+    public Piece p;
+
     private bool choosingPromotion;
 
     private GameObject promotionPane;
@@ -29,6 +31,7 @@ public class PieceHandler : MonoBehaviour
         isDragging = false;
         x = (int)transform.position.x;
         y = (int)transform.position.y;
+        p = new Piece(x, y, pieceName,this.gameObject);
         rulesHandler = rulesHandlerGameObject.GetComponent<RulesHandler>();
         boardHandler = boardHandlerObject.GetComponent<BoardHandler>();
         choosingPromotion = false;
@@ -90,7 +93,7 @@ public class PieceHandler : MonoBehaviour
         var newCoords = GetCoordinates();
         // Here we need to spawn an object to choose promotion piece and send that in together with the move
         string move = boardHandler.GetSquareNotation(newCoords.Item1, newCoords.Item2);
-        
+        print("Released " + pieceName);
         if(pieceName == 'p' && newCoords.Item2 == 1 || pieceName == 'P' && newCoords.Item2 == 8)
         {
             choosingPromotion = true;
@@ -116,6 +119,8 @@ public class PieceHandler : MonoBehaviour
             // Illegal move, ignore it
         }
         transform.position = new Vector2(x, y);
+        print(pieceName + " fully released");
+
 
     }
 
@@ -132,18 +137,32 @@ public class PieceHandler : MonoBehaviour
         }
     }
 
+    public void MoveNoVerification(string move)
+    {
+        (int, int) newCoords = boardHandler.GetCoordsFromSquareNotation(move);
+        bool capture = boardHandler.MovePiece(x, y, move); // Tell the board handler that we moved
+        rulesHandler.MakeMove(x, y, pieceName, capture, newCoords.Item1, newCoords.Item2);
+        boardHandler.SetCounters(rulesHandler.GetCounters()); // Just for debugging
+        boardHandler.SetCastling(rulesHandler.GetCastlingRights());
+        snapToGrid();
+    }
+
 
         private void OnMouseDown()
     {
         if (Input.GetMouseButton(0))
         {
+            print("Selected " + pieceName);
             isDragging = true;
             offset = transform.position - GetMouseWorldPosition();
             boardHandler.RemoveHighlights();
+            
             boardHandler.activePieceReachableSquares = rulesHandler.GetMovesOrAttacks(x,y,false);
+            print("Attacks gotten");
             boardHandler.HighLightSquares(boardHandler.activePieceReachableSquares);
             boardHandler.HighlightSquare(x, y,true);
             boardHandler.DestroyPromotionPlane();
+            print(pieceName + " fully selected");
         }
     }
 

@@ -35,7 +35,7 @@ public class RandomMoveEngine : MonoBehaviour
     void Start()
     {
         boardHandler = boardHandlerObject.GetComponent<BoardHandler>();
-        board = boardHandler.GetBoard();
+        board = boardHandler.GetPHBoard();
         rulesHandler = rulesHandlerObject.GetComponent<RulesHandler>();
         activePlayer = rulesHandler.GetActivePlayer();
         isWhite = rulesHandler.IsWhite(enginePlayer);
@@ -51,7 +51,6 @@ public class RandomMoveEngine : MonoBehaviour
     public (int, int, string) GetNextMove()
     {
         List<(int, int, string)> legalMoves = new List<(int, int, string)>();
-        float timeLimit = 1f; // needs to be implemented
         activePlayer = rulesHandler.GetActivePlayer();
         if (activePlayer == enginePlayer)
             legalMoves = rulesHandler.GetAllValidMoves(enginePlayer);
