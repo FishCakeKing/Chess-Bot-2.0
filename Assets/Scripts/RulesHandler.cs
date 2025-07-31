@@ -765,6 +765,14 @@ public class RulesHandler : MonoBehaviour
         board[fromx, fromy].y = toy;
         board = boardHandler.GetBoard();
 
+        // Handle castling, maybe the corresponding rook was captured
+        if(capture)
+        {
+            if (whiteLongCastle && board[1, 1] != null && board[1, 1].pieceName != 'R') whiteLongCastle = false;
+            if (whiteShortCastle && board[8, 1] != null && board[8, 1].pieceName != 'R') whiteShortCastle = false;
+            if (blackLongCastle && board[1, 8] != null && board[1, 8].pieceName != 'r') blackLongCastle = false;
+            if (blackShortCastle && board[8, 8] != null && board[8, 8].pieceName != 'r') blackShortCastle = false;
+        }
 
         fullMoveCounter += 1;        
         if (pieceType == 'p' || pieceType == 'P' || capture)
@@ -773,6 +781,10 @@ public class RulesHandler : MonoBehaviour
         }
         else halfMoveClock += 1;
 
+        if(pieceType != 'p' && pieceType != 'P')
+        {
+            enPassantSquare = "-";            
+        }
 
         // If the king is moved, it can no longer castle.
         if(pieceType == 'k' || pieceType == 'K')
@@ -798,6 +810,9 @@ public class RulesHandler : MonoBehaviour
                 {
                     // Short castle
                     string move = GetSquareNotationFromCoords(6, ylevel);
+                    print("We are moving " + pieceType + " from " + fromx + ":" + fromy + " to " + tox + ":" + toy);
+                    print("At the board there is " + board[8, ylevel].pieceName);
+                    print("At the board there is " + board[8, ylevel].pieceObject);
                     board[8, ylevel].pieceObject.GetComponent<PieceHandler>().MoveNoVerification(move);
                     return;
                 }
@@ -806,7 +821,10 @@ public class RulesHandler : MonoBehaviour
                 {
                     // Long castle
                     string move = GetSquareNotationFromCoords(4, ylevel);
+                    print("We are moving " + pieceType + " from " + fromx + ":" + fromy + " to " + tox + ":" + toy);
 
+                    print("At the board there is " + board[1, ylevel].pieceName);
+                    print("At the board there is " + board[1, ylevel].pieceObject);
                     board[1, ylevel].pieceObject.GetComponent<PieceHandler>().MoveNoVerification(move);
                     return;
                 }

@@ -190,17 +190,17 @@ MonoBehaviour:
   whitePieces: []
   activePieceReachableSquares: []
   didEnPassant: 0
-  StartingFEN: 1r3k2/3b4/8/8/8/7Q/6PP/7K b - - 0 1
+  StartingFEN: r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1
   FEN: 
-  activeColor: 98
+  activeColor: 119
   castlingRights: 
   enPassantSquare: 
   halfmoveClock: 0
   fullmoveNumber: 0
-  enableEngines: 1
+  enableEngines: 0
   engine1Color: 98
   engine2Color: 119
-  tournamentGames: 50
+  tournamentGames: 100
 --- !u!1 &91195421
 GameObject:
   m_ObjectHideFlags: 0

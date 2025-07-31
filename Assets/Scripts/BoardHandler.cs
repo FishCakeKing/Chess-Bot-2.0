@@ -220,6 +220,11 @@ public class BoardHandler : MonoBehaviour
 
         // Step 2: Handle all non-promotion moves
         PieceHandler tmp = board[fromx, fromy];
+        if(tmp.pieceName != 'p' && tmp.pieceName != 'P')
+        {
+            didEnPassant = false;
+            enPassantSquare = "-";
+        }
         board[fromx, fromy] = null;
         if (board[newCoords.Item1, newCoords.Item2] != null)
         {
@@ -235,9 +240,11 @@ public class BoardHandler : MonoBehaviour
             Debug.Assert(System.Math.Abs(dir) == 1);
             if(System.Math.Abs(dir) != 1)
             {
-                print("Huh!? Tried to en passant from " + fromx + ":" + fromy + " to " + newCoords.Item1 + ":" + newCoords.Item2);
+                print("Huh!? Tried to en passant from " + fromx + ":" + fromy + " to " + newCoords.Item1 + ":" + newCoords.Item2 + " with a  "+tmp.pieceName);
                 Debug.Break();
             }
+            if (board[newCoords.Item1, newCoords.Item2 - dir] == null) print("Oh no! En passanted a null object!");
+            print("At that spot there is " + board[newCoords.Item1, newCoords.Item2 - dir].pieceName);
             Capture(board[newCoords.Item1, newCoords.Item2 - dir].gameObject);
             capture = true;
         }

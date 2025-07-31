@@ -9,8 +9,9 @@ public class Engine : MonoBehaviour
     // Result vs random moves engine: 51 draws
     // After choosing random move and beeing greedy: 5 wins 46 draws
     // After fixing promotion logic: 8 wins 43 draws
-
     // After adding checkmate in 1 logic: 44 wins 0 loss 57 draws
+
+    // Vs human: 0 wins 0 draws 1 loss
 
 
     public GameObject boardHandlerObject;
