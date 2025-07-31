@@ -78,7 +78,7 @@ public class RulesHandler : MonoBehaviour
         }
 
         // This sometimes still happens after castling. Usually means that something was not assigned properly, or GetMovesOrAttacks was called with the wrong flag
-        if(board[fromx,fromy] == null)
+        if(otherBoard[fromx,fromy] == null)
         {
             print("Tried to move invalid piece at " + fromx + " " + fromy);
             return false;
@@ -97,9 +97,10 @@ public class RulesHandler : MonoBehaviour
                 // The desired move is legal. 
                 if (enPassantSquare != "-" && enPassantSquare == move)
                 {
+                    print("did en passaant");
                     boardHandler.didEnPassant = true;
                 }
-                if (System.Math.Abs(fromy - coords.Item2) == 2)
+                else if (System.Math.Abs(fromy - coords.Item2) == 2)
                 {
                     // Moved two spaces. Can en passant
                     SetEnPassant(coords.Item1, fromy);
@@ -136,8 +137,8 @@ public class RulesHandler : MonoBehaviour
         //if(!onlyReturnAttacks)print("Looking for a piece at " + fromx + " " + fromy + " and only attacks is "+onlyReturnAttacks);
         //print("Gettin ready to check " + fromx + ":" + fromy);
         char piece = otherBoard[fromx, fromy].pieceName;
-        if (!onlyReturnAttacks) print("We found a " + piece + " at "+fromx+":"+fromy);
-        if (!onlyReturnAttacks) print("It beleives it is at "+ otherBoard[fromx,fromy].x+":" + otherBoard[fromx, fromy].y);
+        //if (!onlyReturnAttacks) print("We found a " + piece + " at "+fromx+":"+fromy);
+        //if (!onlyReturnAttacks) print("It beleives it is at "+ otherBoard[fromx,fromy].x+":" + otherBoard[fromx, fromy].y);
         switch (piece)
         {
             // Pawn moves
@@ -213,6 +214,8 @@ public class RulesHandler : MonoBehaviour
         if(enemyAttackedSquares.Item1.Contains((fromx,fromy))|| enemyAttackedSquares.Item1.Contains((tox, toy)) || backupOfAttacker != null)
             enemyAttackedSquares = EnemyAttackedSquares(isWhite, otherBoard);
         (int, int) kingCoords = enemyAttackedSquares.Item2;
+        if(kingCoords.Item1 != 0 && isWhite != IsWhite(otherBoard[kingCoords.Item1, kingCoords.Item2])) print("We are " + isWhite + " and king is " + IsWhite(otherBoard[kingCoords.Item1, kingCoords.Item2]));
+
 
         if(backupOfAttacker.pieceName == 'k' || backupOfAttacker.pieceName=='K')
         {
@@ -221,7 +224,7 @@ public class RulesHandler : MonoBehaviour
             kingCoords.Item1 = tox;
             kingCoords.Item2 = toy;
         }
-
+        //print("Enemy attacks " + enemyAttackedSquares.Item1.Count);
         foreach((int,int) square in enemyAttackedSquares.Item1)
         {
             if(square == kingCoords)
@@ -350,6 +353,8 @@ public class RulesHandler : MonoBehaviour
     private void AddMoveToList(int fromx,int fromy, int tox, int toy, ref List<string> validSquares,Piece[,] otherBoard)
     {
         Debug.Assert(IsSquareValid(tox, toy));
+
+        if (otherBoard[tox,toy] != null && IsWhite(otherBoard[fromx, fromy]) == IsWhite(otherBoard[tox, toy])) return;
         if(!MovePutsSelfInCheck(fromx, fromy, tox,toy, otherBoard))
         {
             validSquares.Add(GetSquareNotationFromCoords(tox, toy));
@@ -474,7 +479,7 @@ public class RulesHandler : MonoBehaviour
     {
         List<string> validMoves = new List<string>();
         Piece attacker = otherBoard[fromx, fromy];
-        print("Horse name is "+attacker.pieceName);
+        //print("Horse name is "+attacker.pieceName);
         AddValidMove(1, 2, attacker, ref validMoves, onlyReturnAttacked, otherBoard);
         AddValidMove(1, -2, attacker, ref validMoves,onlyReturnAttacked,otherBoard);
         AddValidMove(-1, 2, attacker, ref validMoves, onlyReturnAttacked,otherBoard);
@@ -490,7 +495,6 @@ public class RulesHandler : MonoBehaviour
     private List<string> LegalMovesKing(int fromx, int fromy, bool onlyReturnAttacked,Piece[,] otherBoard)
     {
         List<string> validMoves = new List<string>();
-
         // A king can:
         // 1: Move 1 step in any direction
         // 2: Castle, ugh
@@ -498,7 +502,7 @@ public class RulesHandler : MonoBehaviour
         // 1. Move in any direction
         if(!onlyReturnAttacked)
         {
-            enemyAttackedSquares = EnemyAttackedSquares(IsWhite(otherBoard[fromx, fromy]), otherBoard);
+            enemyAttackedSquares = EnemyAttackedSquares(IsWhite(otherBoard[fromx, fromy]), otherBoard);         
         }
 
         for (int i = -1; i <= 1; i++)
@@ -506,13 +510,21 @@ public class RulesHandler : MonoBehaviour
             for (int j = -1; j <= 1; j++)
             {
                 if (j == 0 && i == 0) continue;
-                if (enemyAttackedSquares.Item1 == null) break;
+                if (enemyAttackedSquares.Item1 == null)
+                {
+                    AddValidMove(i, j, otherBoard[fromx, fromy], ref validMoves, onlyReturnAttacked, otherBoard);
+                    continue;
+                }
 
                 if (enemyAttackedSquares.Item1.Contains((fromx+i, fromy+j)) && !onlyReturnAttacked)
                 {
                     continue; // Do not capture something that is defended
                 }
-                AddValidMove(i, j, board[fromx, fromy], ref validMoves, onlyReturnAttacked, otherBoard);
+                if (otherBoard[fromx, fromy] == null) print("OH no! There is no king at " + fromx + ":" + fromy);
+                if (!enemyAttackedSquares.Item1.Contains((fromx + i, fromy + j)))
+                {
+                    AddValidMove(i, j, otherBoard[fromx, fromy], ref validMoves, onlyReturnAttacked, otherBoard);
+                }
 
             }
         }
@@ -523,7 +535,7 @@ public class RulesHandler : MonoBehaviour
         // You can't castle through pieces, and can't castle through (or into) check
         // It is also not possible to castle if the king has moved, or the corresponding rook. This is handled in the "MakeMove" function
 
-        bool isWhite = IsWhite(board[fromx, fromy]);
+        bool isWhite = IsWhite(otherBoard[fromx, fromy]);
 
         // Warning! Ternary operators incoming
         bool shortCastle = isWhite ? whiteShortCastle : blackShortCastle;
@@ -578,6 +590,8 @@ public class RulesHandler : MonoBehaviour
         // AttackableSquare also check for check, heh. A check-check
         if (AttackableSquare(attacker, attacker.x + xOffset, attacker.y + yOffset, onlyReturnAttacked, otherBoard))
         {
+            //if (IsWhite(otherBoard[attacker.x, attacker.y])) print("Yeahh we can add " +attacker.pieceName+ (attacker.x + xOffset)+":"+ (attacker.y + yOffset));
+
             validMoves.Add(GetSquareNotationFromCoords(attacker.x + xOffset, attacker.y + yOffset));
         }
     }
@@ -669,17 +683,19 @@ public class RulesHandler : MonoBehaviour
     {
         List<(int, int)> attackedSquares = new List<(int, int)>();
         (int, int) friendlyKingCoords = (0, 0);
-        foreach (Piece p in board)
+        foreach (Piece p in otherBoard)
         {
             if (p == null) continue;
             if (otherBoard[p.x, p.y] == null) continue;
             if (IsWhite(p) != isWhite)
             {
                 List<string> attacked = GetMovesOrAttacks(p.x, p.y, true, otherBoard);
-                if (gameOver) return (new List<(int,int)>(),(-1,-1));
+                //if (isWhite) print("We found " + attacked.Count);
+                //if (gameOver) return (new List<(int,int)>(),(-1,-1));
                 foreach(string squareNotation in attacked)
                 {
                     (int, int) square = GetCoordsFromSquareNotation(squareNotation);
+                    //print("New move found " + squareNotation);
                     attackedSquares.Add(square);
                 }
             }
@@ -697,7 +713,7 @@ public class RulesHandler : MonoBehaviour
     // this format is easy to use in arrays, and allows to differentiate promotion moves
     // example 1: 5,7,e8=Q
     // example 2: 4,3,e5
-    public List<(int, int, string)> GetAllValidMoves(char color,Piece[,] otherBoard)
+    public List<(int, int, string)> GetAllValidMoves(char color, Piece[,] otherBoard, bool testMove = false)
     {
         bool isWhite = IsWhite(color);
         List<(int,int,string)> attackedSquares = new List<(int, int,string)>();
@@ -718,12 +734,13 @@ public class RulesHandler : MonoBehaviour
             }
         }
 
-
+        if (testMove) return attackedSquares;
 
         if(attackedSquares.Count == 0)
         {
             gameOver = true;
-
+            enemyAttackedSquares = EnemyAttackedSquares(isWhite, otherBoard);
+            print("Our king is at " + enemyAttackedSquares.Item2);
             if(!enemyAttackedSquares.Item1.Contains(enemyAttackedSquares.Item2))
             {
                 // Draw by stalemate!
@@ -746,12 +763,7 @@ public class RulesHandler : MonoBehaviour
     {
         board[fromx, fromy].x = tox;
         board[fromx, fromy].y = toy;
-        if (board[fromx, fromy] == null) print("Nothing there");
-        else print(board[fromx, fromy].pieceName + " is at " + fromx + ":" + fromy);
         board = boardHandler.GetBoard();
-        if (board[fromx, fromy] == null) print("Nothing there");
-        else print(board[fromx, fromy].pieceName + " is at " + fromx + ":" + fromy);
-        print("At the destination there is a " + board[tox, toy].pieceName);
 
 
         fullMoveCounter += 1;        
@@ -857,7 +869,8 @@ public class RulesHandler : MonoBehaviour
         enemyAttackedSquares = EnemyAttackedSquares(IsWhite(pieceType),board); // Call this only once per turn, it is quite heavy-weight
         //print("Enemy attacks " + enemyAttackedSquares.Item1.Count + " squares");
         TogglePlayer();
-
+        GetAllValidMoves(activePlayer, board);
+        //print(activePlayer+"Can now make " + GetAllValidMoves(activePlayer, board).Count);
 
     }
 

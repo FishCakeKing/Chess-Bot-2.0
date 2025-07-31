@@ -190,9 +190,9 @@ MonoBehaviour:
   whitePieces: []
   activePieceReachableSquares: []
   didEnPassant: 0
-  StartingFEN: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+  StartingFEN: 1r3k2/3b4/8/8/8/7Q/6PP/7K b - - 0 1
   FEN: 
-  activeColor: 119
+  activeColor: 98
   castlingRights: 
   enPassantSquare: 
   halfmoveClock: 0

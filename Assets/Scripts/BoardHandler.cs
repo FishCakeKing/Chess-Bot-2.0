@@ -118,6 +118,7 @@ public class BoardHandler : MonoBehaviour
 
         PlaceFENNotation(FEN);
 
+
     }
 
     void Update()
@@ -133,7 +134,7 @@ public class BoardHandler : MonoBehaviour
             if (activeColor == engine1Color) // just for debug
             {
                 engine.SetBoard(board);
-                nextMove = engine.GetNextMove();
+                nextMove = engine.GetNextMove();                
 
             }
             
@@ -228,9 +229,15 @@ public class BoardHandler : MonoBehaviour
         else if(didEnPassant)
         {
             // Did en passant
+            print("did en passee");
             didEnPassant = false;
             int dir = newCoords.Item2 - fromy;
             Debug.Assert(System.Math.Abs(dir) == 1);
+            if(System.Math.Abs(dir) != 1)
+            {
+                print("Huh!? Tried to en passant from " + fromx + ":" + fromy + " to " + newCoords.Item1 + ":" + newCoords.Item2);
+                Debug.Break();
+            }
             Capture(board[newCoords.Item1, newCoords.Item2 - dir].gameObject);
             capture = true;
         }
@@ -381,7 +388,7 @@ public class BoardHandler : MonoBehaviour
             for(int j = 1; j<=8;j++)
             {
                 if(board[i,j] != null)
-                    pieceBoard[i, j] = board[i, j].p;
+                    pieceBoard[i, j] = new Piece(i, j,board[i,j].pieceName,board[i,j].p.pieceObject);
             }
         }
         return pieceBoard;
