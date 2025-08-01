@@ -4,14 +4,15 @@ using UnityEngine;
 
 public class Engine : MonoBehaviour
 {
-    // Greedy capture engine!
+    // Less greedy checkmate in n engine, at halfmove depth = 2
+    // Now avoids sacrifices that brings it down in material, as far as the depth can see
+    // So, no more capturing a protected pawn with a queen
 
-    // Result vs random moves engine: 51 draws
-    // After choosing random move and beeing greedy: 5 wins 46 draws
-    // After fixing promotion logic: 8 wins 43 draws
-    // After adding checkmate in 1 logic: 44 wins 0 loss 57 draws
+    // Result vs CheckmateInOne engine:
+    // 63 wins 3 losses 36 draws
 
-    // Vs human: 0 wins 0 draws 1 loss
+    // Vs human:
+    // 0 wins 1 loss
 
 
     public GameObject boardHandlerObject;
@@ -45,7 +46,7 @@ public class Engine : MonoBehaviour
     {
         board = boardHandler.GetBoard();
         List<(int, int, string)> legalMoves = new List<(int, int,string)>();
-        float timeLimit = 1f; // needs to be implemented
+        int depth = 2; // half moves
         activePlayer = rulesHandler.GetActivePlayer();
         if(activePlayer == enginePlayer)
             legalMoves = rulesHandler.GetAllValidMoves(enginePlayer,board);
@@ -58,15 +59,16 @@ public class Engine : MonoBehaviour
             // No legal moves. Checkmate!
             return (-1, -1, "-");
         }
-
+        if (legalMoves.Count < 10) depth += 1;
         // Okay, we have a list of all possible moves.
         // Time to think
         (int, int, string) bestMove = GetRandomMove(legalMoves);
-        float bestMoveScore = EvaluateMove(bestMove);
+        float bestMoveScore = EvaluateMove(bestMove,depth,board);
         //print("# of moves" + legalMoves.Count);
         foreach(var move in legalMoves)
         {
-            float moveScore = EvaluateMove(move);
+            //print("evaluating " + move);
+            float moveScore = EvaluateMove(move,depth,board);
             //print(move + " has score " + moveScore);
             if(moveScore > bestMoveScore)
             {
@@ -79,7 +81,7 @@ public class Engine : MonoBehaviour
         return bestMove;
     }
 
-    private float EvaluateBoard(Piece[,] testBoard)
+    private float EvaluateBoard(Piece[,] testBoard,int depth)
     {
         float evaluation = 0.0f;
         float enemypoints = 0;
@@ -101,13 +103,34 @@ public class Engine : MonoBehaviour
         var enemyMoves = rulesHandler.GetAllValidMoves(enemyColor, testBoard,true);
         evaluation = friendlypoints - enemypoints;
         if (enemyMoves.Count == 0) evaluation += 100; // VERY crude checkmate in 1 check, also finds draws
+        //print("Evaluation is " + evaluation);
+        // Go a step deeper: is this position actually good? What can the opponent do next?
+        depth -= 1;
+        float bestMoveScore = 0f;
+        if (depth > 0 && enemyMoves.Count > 0)
+        {
+            var bestMove = GetRandomMove(enemyMoves);
+            bestMoveScore = EvaluateMove(bestMove, depth,testBoard);
 
+            // Find all opponent moves, return the highest scoring move, use that as our score instead (but negative)
+            //print("# of moves" + enemyMoves.Count);
+            foreach (var move in enemyMoves)
+            {
+                float moveScore = EvaluateMove(move, depth,testBoard);
+                if(moveScore != 7f)
+                if (moveScore < bestMoveScore)
+                {
+                    bestMoveScore = moveScore;
+                    bestMove = move;
+                }
+            }
 
-
+            return bestMoveScore;
+        }
         return evaluation;
     }
 
-    public float EvaluateMove((int,int,string) move)
+    public float EvaluateMove((int,int,string) move,int depth,Piece[,] otherBoard)
     {
         //if (move.Item1 == 2) print("Rook move found "+move.Item3);
         Piece[,] testBoard = new Piece[9,9];
@@ -115,13 +138,13 @@ public class Engine : MonoBehaviour
         {
             for (int j = 1; j <= 8; j++)
             {
-                if(board[i,j] != null)
-                    testBoard[i, j] = new Piece(i,j,board[i, j].pieceName);
+                if(otherBoard[i,j] != null)
+                    testBoard[i, j] = new Piece(i,j, otherBoard[i, j].pieceName);
             }
         }
         testBoard = MakeMove(move, testBoard);
         //if(testBoard[2,1]!=null) print("On testboard at 2 1 there is a " + testBoard[2, 1].pieceName);
-        return EvaluateBoard(testBoard);
+        return EvaluateBoard(testBoard,depth);
     }
 
 
@@ -141,22 +164,24 @@ public class Engine : MonoBehaviour
 
     private Piece[,] MakeMove((int,int,string) move,Piece[,] testBoard)
     {
-        //print("At " + move.Item1 + " :" + move.Item2 + " there is a  " + testBoard[move.Item1, move.Item2].pieceName);
+
+        
         var tmp = testBoard[move.Item1, move.Item2];
         testBoard[move.Item1, move.Item2] = null;
         (int, int) newCoords = GetCoordsFromSquareNotation(move.Item3);
+        if(testBoard[newCoords.Item1, newCoords.Item2] != null && testBoard[newCoords.Item1, newCoords.Item2].pieceName == 'Q')
+        print("and At " + newCoords.Item1 + " :" + newCoords.Item2 + " there is a  " + testBoard[newCoords.Item1, newCoords.Item2].pieceName);
 
-        if(move.Item3.Length == 2)
+        if (move.Item3.Length == 2)
         {
-            testBoard[newCoords.Item1, newCoords.Item2] = tmp;
+            testBoard[newCoords.Item1, newCoords.Item2] = new Piece(newCoords.Item1, newCoords.Item2, tmp.pieceName);
         }
         else
         {
             // Promotion move
-            testBoard[newCoords.Item1, newCoords.Item2] = new Piece(move.Item1, move.Item2, move.Item3[3]);
+            testBoard[newCoords.Item1, newCoords.Item2] = new Piece(newCoords.Item1, newCoords.Item2, move.Item3[3]);
         }
-        testBoard[newCoords.Item1, newCoords.Item2].x = newCoords.Item1;
-        testBoard[newCoords.Item1, newCoords.Item2].y = newCoords.Item2;
+
         // print("At " + newCoords.Item1+"("+testBoard[newCoords.Item1,newCoords.Item2].x+")" + ":" + newCoords.Item2 + "(" + testBoard[newCoords.Item1, newCoords.Item2].y + ")" + " there is a " + testBoard[newCoords.Item1, newCoords.Item2].pieceName);
         return testBoard;
     }

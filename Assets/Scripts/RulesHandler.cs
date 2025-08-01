@@ -549,7 +549,7 @@ public class RulesHandler : MonoBehaviour
 
         if (enemySquares.Contains(kingPos)) return validMoves; // You can not castle out of check, for some reason
 
-        Debug.Assert(kingPos == (5, ylevel)); // If this is fails, the king has somehow moved without us knowing. How!?
+        //Debug.Assert(kingPos == (5, ylevel)); // If this is fails, the king has somehow moved without us knowing. How!?
 
         if(shortCastle)
         { 
@@ -560,7 +560,7 @@ public class RulesHandler : MonoBehaviour
         }
         if (longCastle)
         {
-            if (RowIsEmptyAndNotAttacked(3,4,ylevel, enemySquares, otherBoard))
+            if (RowIsEmptyAndNotAttacked(2,4,ylevel, enemySquares, otherBoard))
             {
                 validMoves.Add(GetSquareNotationFromCoords(3, ylevel));
             }

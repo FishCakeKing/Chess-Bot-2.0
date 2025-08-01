@@ -51,7 +51,7 @@ public class BoardHandler : MonoBehaviour
     private PieceHandler[,] board;
 
     private Engine engine;
-    private RandomMoveEngine engine2;
+    private CheckMateInOneEngine engine2;
 
     private int engineOneWins;
     private int engineTwoWins;
@@ -102,7 +102,7 @@ public class BoardHandler : MonoBehaviour
         pieceNamePrefabConvertion = new Dictionary<char, GameObject>();
         activePieceReachableSquares = new List<string>();
         engine = engineObject.GetComponent<Engine>();
-        engine2 = engine2Object.GetComponent<RandomMoveEngine>();
+        engine2 = engine2Object.GetComponent<CheckMateInOneEngine>();
         rulesHandler = rulesHandlerObject.GetComponent<RulesHandler>();
 
         engineOneWins = 0;

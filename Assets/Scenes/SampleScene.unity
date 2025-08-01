@@ -190,17 +190,17 @@ MonoBehaviour:
   whitePieces: []
   activePieceReachableSquares: []
   didEnPassant: 0
-  StartingFEN: r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1
+  StartingFEN: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
   FEN: 
   activeColor: 119
   castlingRights: 
   enPassantSquare: 
   halfmoveClock: 0
   fullmoveNumber: 0
-  enableEngines: 0
-  engine1Color: 98
-  engine2Color: 119
-  tournamentGames: 100
+  enableEngines: 1
+  engine1Color: 119
+  engine2Color: 98
+  tournamentGames: 50
 --- !u!1 &91195421
 GameObject:
   m_ObjectHideFlags: 0
@@ -1673,7 +1673,7 @@ MonoBehaviour:
   boardHandlerObject: {fileID: 75234087}
   rulesHandlerObject: {fileID: 447794037}
   activePlayer: 0
-  enginePlayer: 98
+  enginePlayer: 119
 --- !u!4 &622353865
 Transform:
   m_ObjectHideFlags: 0
@@ -2956,13 +2956,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 956615039}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e30abfbc4df0cae4b9a33849c80dbbd3, type: 3}
+  m_Script: {fileID: 11500000, guid: d2c353022bee1734bb99dfdb55475bab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   boardHandlerObject: {fileID: 75234087}
   rulesHandlerObject: {fileID: 447794037}
   activePlayer: 0
-  enginePlayer: 119
+  enginePlayer: 98
 --- !u!4 &956615041
 Transform:
   m_ObjectHideFlags: 0
